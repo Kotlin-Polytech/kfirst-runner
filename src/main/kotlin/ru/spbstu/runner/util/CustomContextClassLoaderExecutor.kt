@@ -1,4 +1,4 @@
-package util
+package ru.spbstu.runner.util
 
 class CustomContextClassLoaderExecutor(val customClassLoader: ClassLoader?) {
 

@@ -1,3 +1,5 @@
+package ru.spbstu.runner
+
 /**
  * Created by akhin on 8/15/16.
  */
@@ -6,7 +8,7 @@ import org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder
 import org.junit.platform.launcher.core.LauncherFactory
 import org.junit.platform.launcher.listeners.SummaryGeneratingListener
-import util.CustomContextClassLoaderExecutor
+import ru.spbstu.runner.util.CustomContextClassLoaderExecutor
 import java.io.PrintWriter
 import java.net.URL
 import java.net.URLClassLoader
