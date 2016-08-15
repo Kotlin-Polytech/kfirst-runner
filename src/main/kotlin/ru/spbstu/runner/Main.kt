@@ -19,6 +19,9 @@ fun main(args: Array<String>) {
             .toList()
     val packages = args.drop(1)
 
+    println("Classpath roots: ${classpathRoots.joinToString()}")
+    println("Test packages: ${packages.joinToString()}")
+
     CustomContextClassLoaderExecutor(
             URLClassLoader(
                     classpathRoots.toTypedArray(),
