@@ -6,9 +6,7 @@ package ru.spbstu.runner
 
 import org.junit.platform.engine.TestExecutionResult.Status.SUCCESSFUL
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage
-import org.junit.platform.engine.support.descriptor.JavaClassSource
 import org.junit.platform.engine.support.descriptor.JavaMethodSource
-import org.junit.platform.engine.support.descriptor.JavaPackageSource
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder
 import org.junit.platform.launcher.core.LauncherFactory
 import ru.spbstu.runner.util.CustomContextClassLoaderExecutor
@@ -75,10 +73,14 @@ fun main(args: Array<String>) {
             File("$pkg.results").writer().use { writer ->
                 writer.appendln("Total: ${succeededTests.size} / ${pkgTests.size}")
 
-                writer.appendln("Succeeded:")
-                succeededTests.forEach { writer.appendln("* ${it.key.uniqueId}") }
-                writer.appendln("Failed:")
-                failedTests.forEach { writer.appendln("* ${it.key.uniqueId}") }
+                if (succeededTests.isNotEmpty()) {
+                    writer.appendln("Succeeded:")
+                    succeededTests.forEach { writer.appendln("* ${it.key.uniqueId}") }
+                }
+                if (failedTests.isNotEmpty()) {
+                    writer.appendln("Failed:")
+                    failedTests.forEach { writer.appendln("* ${it.key.uniqueId}") }
+                }
             }
         }
 
