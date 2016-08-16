@@ -55,12 +55,12 @@ fun main(args: Array<String>) {
                             is JavaMethodSource -> {
                                 s.javaClass.`package`.name
                             }
-                            is JavaClassSource -> {
-                                s.javaClass.`package`.name
-                            }
-                            is JavaPackageSource -> {
-                                s.packageName
-                            }
+//                            is JavaClassSource -> {
+//                                s.javaClass.`package`.name
+//                            }
+//                            is JavaPackageSource -> {
+//                                s.packageName
+//                            }
                             else -> ""
                         }
                     }.orElseGet { "" }
