@@ -104,6 +104,7 @@ fun main(args: Array<String>) {
                     writer.appendln("Succeeded:")
                     succeededTests.forEach { writer.appendln("* ${it.key.uniqueId}") }
                 }
+                writer.appendln()
                 if (failedTests.isNotEmpty()) {
                     writer.appendln("Failed:")
                     failedTests.forEach { writer.appendln("* ${it.key.uniqueId}") }
