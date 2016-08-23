@@ -94,21 +94,25 @@ fun main(args: Array<String>) {
 
             File("$pkg.results").writer().use { writer ->
                 writer.appendln("Total: ${succeededTests.size} / ${pkgTests.size}")
+                writer.appendln()
 
                 for ((tag, taggedTests) in allTaggedTests) {
                     val succeededTests = taggedTests.filter { SUCCESSFUL == it.value.status }
                     writer.appendln("${tag.name}: ${succeededTests.size} / ${taggedTests.size}")
                 }
+                writer.appendln()
 
                 if (succeededTests.isNotEmpty()) {
                     writer.appendln("Succeeded:")
                     succeededTests.forEach { writer.appendln("* ${it.key.uniqueId}") }
                 }
                 writer.appendln()
+
                 if (failedTests.isNotEmpty()) {
                     writer.appendln("Failed:")
                     failedTests.forEach { writer.appendln("* ${it.key.uniqueId}") }
                 }
+                writer.appendln()
             }
         }
 
