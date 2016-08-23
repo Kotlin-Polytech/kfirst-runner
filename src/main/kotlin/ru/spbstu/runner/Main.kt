@@ -5,6 +5,7 @@ package ru.spbstu.runner
  */
 
 import org.junit.platform.engine.TestExecutionResult.Status.SUCCESSFUL
+import org.junit.platform.engine.TestTag
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage
 import org.junit.platform.engine.support.descriptor.JavaMethodSource
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder
@@ -64,14 +65,40 @@ fun main(args: Array<String>) {
                     }.orElseGet { "" }
                 }
 
+        val NO_TAGS = TestTag.create("No tags")
+
+        val tags = listOf(
+                "Example",
+                "Trivial",
+                "Easy",
+                "Normal",
+                "Hard",
+                "Impossible"
+        ).map { TestTag.create(it) }
+
         for (pkg in packages) {
-            val pkgTests = allTests[pkg] ?: emptyList()
+            val pkgTests = allTests[pkg] ?: continue
 
             val succeededTests = pkgTests.filter { SUCCESSFUL == it.value.status }
             val failedTests = pkgTests.filter { SUCCESSFUL != it.value.status }
 
+            val allTaggedTests = (tags
+                    .map { tag ->
+                        Pair(
+                                tag,
+                                pkgTests.filter { tag in it.key.tags }
+                        )
+                    } + Pair(NO_TAGS, pkgTests.filter { it.key.tags.isEmpty() }))
+                    .filter { it.second.isNotEmpty() }
+                    .toMap()
+
             File("$pkg.results").writer().use { writer ->
                 writer.appendln("Total: ${succeededTests.size} / ${pkgTests.size}")
+
+                for ((tag, taggedTests) in allTaggedTests) {
+                    val succeededTests = taggedTests.filter { SUCCESSFUL == it.value.status }
+                    writer.appendln("${tag.name}: ${succeededTests.size} / ${taggedTests.size}")
+                }
 
                 if (succeededTests.isNotEmpty()) {
                     writer.appendln("Succeeded:")
