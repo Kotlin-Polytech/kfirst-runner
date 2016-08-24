@@ -124,7 +124,16 @@ fun main(args: Array<String>) {
 
                 if (failedTests.isNotEmpty()) {
                     writer.appendln("Failed:")
-                    failedTests.forEach { writer.appendln("* ${it.key.uniqueId}") }
+                    failedTests.forEach { e ->
+                        writer.appendln("* ${e.key.uniqueId}")
+                        if (e.value
+                                .throwable
+                                .filter { NotImplementedError::class.java != it.javaClass }
+                                .isPresent) {
+                            val ex = e.value.throwable.get()
+                            writer.appendln("    * ${ex.message}")
+                        }
+                    }
                 }
                 writer.appendln()
             }
