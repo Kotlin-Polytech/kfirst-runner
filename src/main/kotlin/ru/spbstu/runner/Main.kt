@@ -110,8 +110,9 @@ fun main(args: Array<String>) {
 
                 for ((tag, taggedTests) in allTaggedTests) {
                     val succeededTests = taggedTests.filter { SUCCESSFUL == it.value.status }
-                    writer.appendln("${tag.name}: ${succeededTests.size} / ${taggedTests.size}")
                     data.add(succeededTests.size)
+                    if (taggedTests.isEmpty()) continue
+                    writer.appendln("${tag.name}: ${succeededTests.size} / ${taggedTests.size}")
                 }
                 writer.appendln()
 
