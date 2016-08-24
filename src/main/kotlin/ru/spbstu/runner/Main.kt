@@ -16,6 +16,7 @@ import ru.spbstu.runner.util.TestReportListener
 import java.io.File
 import java.net.URL
 import java.net.URLClassLoader
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 fun main(args: Array<String>) {
@@ -97,7 +98,7 @@ fun main(args: Array<String>) {
 
             val data = mutableListOf<Any>()
 
-            data.add(Date())
+            data.add(DateTimeFormatter.ISO_INSTANT.format(Date().toInstant()))
             data.add(author)
 
             File("$pkg.results").writer().use { writer ->
