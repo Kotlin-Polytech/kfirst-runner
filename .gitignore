@@ -13,3 +13,6 @@ buildNumber.properties
 .gitignore
 .idea/
 *.iml
+
+src/main/resources/client_secret.json
+src/main/resources/spreadsheet_secret.id

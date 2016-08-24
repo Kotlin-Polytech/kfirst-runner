@@ -11,6 +11,7 @@ import org.junit.platform.engine.support.descriptor.JavaMethodSource
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder
 import org.junit.platform.launcher.core.LauncherFactory
 import ru.spbstu.runner.util.CustomContextClassLoaderExecutor
+import ru.spbstu.runner.util.GoogleApiFacade
 import ru.spbstu.runner.util.TestReportListener
 import java.io.File
 import java.net.URL
@@ -21,6 +22,8 @@ fun main(args: Array<String>) {
             .flatMap { sequenceOf(URL("$it/classes/"), URL("$it/test-classes/")) }
             .toList()
     val packages = args.drop(1)
+
+    val author = File("author.results").readText()
 
     println("Classpath roots: ${classpathRoots.joinToString()}")
     println("Test packages: ${packages.joinToString()}")
@@ -89,16 +92,23 @@ fun main(args: Array<String>) {
                                 pkgTests.filter { tag in it.key.tags }
                         )
                     } + Pair(NO_TAGS, pkgTests.filter { it.key.tags.isEmpty() }))
-                    .filter { it.second.isNotEmpty() }
                     .toMap()
 
+            val data = mutableListOf<Any>()
+
+            data.add(author)
+
             File("$pkg.results").writer().use { writer ->
+                writer.appendln("Author: $author")
+                writer.appendln()
+
                 writer.appendln("Total: ${succeededTests.size} / ${pkgTests.size}")
                 writer.appendln()
 
                 for ((tag, taggedTests) in allTaggedTests) {
                     val succeededTests = taggedTests.filter { SUCCESSFUL == it.value.status }
                     writer.appendln("${tag.name}: ${succeededTests.size} / ${taggedTests.size}")
+                    data.add(succeededTests.size)
                 }
                 writer.appendln()
 
@@ -114,6 +124,11 @@ fun main(args: Array<String>) {
                 }
                 writer.appendln()
             }
+
+            GoogleApiFacade.createSheet(pkg)
+
+            GoogleApiFacade.appendToSheet(pkg, data.map { it.toString() })
+
         }
 
     }
