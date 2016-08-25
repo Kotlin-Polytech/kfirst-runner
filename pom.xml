@@ -8,6 +8,13 @@
     <artifactId>kfirst-runner</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+
     <properties>
         <kotlin.version>1.0.3</kotlin.version>
         <junit.jupiter.version>5.0.0-M2</junit.jupiter.version>
@@ -68,6 +75,13 @@
             <artifactId>google-api-services-sheets</artifactId>
             <version>v4-rev19-1.22.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.github.belyaev-mikhail</groupId>
+            <artifactId>kcheck</artifactId>
+            <version>master-SNAPSHOT</version>
+        </dependency>
+
     </dependencies>
 
     <build>

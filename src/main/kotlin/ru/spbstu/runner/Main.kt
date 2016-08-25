@@ -4,6 +4,7 @@ package ru.spbstu.runner
  * Created by akhin on 8/15/16.
  */
 
+import common.TestFailureException
 import org.junit.platform.engine.TestExecutionResult.Status.SUCCESSFUL
 import org.junit.platform.engine.TestTag
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage
@@ -101,6 +102,11 @@ fun main(args: Array<String>) {
             data.add(DateTimeFormatter.ISO_INSTANT.format(Date().toInstant()))
             data.add(author)
 
+            for ((tag, taggedTests) in allTaggedTests) {
+                val succeededTests = taggedTests.filter { SUCCESSFUL == it.value.status }
+                data.add(succeededTests.size)
+            }
+
             File("$pkg.results").writer().use { writer ->
                 writer.appendln("Author: $author")
                 writer.appendln()
@@ -109,9 +115,9 @@ fun main(args: Array<String>) {
                 writer.appendln()
 
                 for ((tag, taggedTests) in allTaggedTests) {
-                    val succeededTests = taggedTests.filter { SUCCESSFUL == it.value.status }
-                    data.add(succeededTests.size)
                     if (taggedTests.isEmpty()) continue
+
+                    val succeededTests = taggedTests.filter { SUCCESSFUL == it.value.status }
                     writer.appendln("${tag.name}: ${succeededTests.size} / ${taggedTests.size}")
                 }
                 writer.appendln()
@@ -128,10 +134,20 @@ fun main(args: Array<String>) {
                         writer.appendln("* ${e.key.uniqueId}")
                         if (e.value
                                 .throwable
-                                .filter { NotImplementedError::class.java != it.javaClass }
+                                .filter { it !is NotImplementedError }
                                 .isPresent) {
                             val ex = e.value.throwable.get()
-                            writer.appendln("    * ${ex.message}")
+
+                            if (ex is TestFailureException) {
+                                writer.appendln("    * Expected: ${ex.expectedOutput}")
+                                writer.appendln("    * Actual: ${ex.output}")
+                                writer.appendln("    * Inputs:")
+                                ex.input.forEach {
+                                    writer.appendln("        * ${it.key} -> ${it.value}")
+                                }
+                            } else {
+                                writer.appendln("    * ${ex.message}")
+                            }
                         }
                     }
                 }
