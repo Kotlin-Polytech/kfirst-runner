@@ -131,11 +131,13 @@ fun main(args: Array<String>) {
                 if (failedTests.isNotEmpty()) {
                     writer.appendln("Failed:")
                     failedTests.forEach { e ->
-                        writer.appendln("* ${e.key.uniqueId}")
                         if (e.value
                                 .throwable
                                 .filter { it !is NotImplementedError }
                                 .isPresent) {
+                            
+                            writer.appendln("* ${e.key.uniqueId}")
+
                             val ex = e.value.throwable.get()
 
                             if (ex is TestFailureException) {
