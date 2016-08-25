@@ -145,6 +145,7 @@ fun main(args: Array<String>) {
                                 ex.input.forEach {
                                     writer.appendln("        * ${it.key} -> ${it.value}")
                                 }
+                                writer.appendln("    * Exception: ${ex.inner}")
                             } else {
                                 writer.appendln("    * ${ex.javaClass.name} : ${ex.message}")
                             }
