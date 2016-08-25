@@ -124,7 +124,9 @@ fun main(args: Array<String>) {
 
                 if (succeededTests.isNotEmpty()) {
                     writer.appendln("Succeeded:")
-                    succeededTests.forEach { writer.appendln("* ${it.key.uniqueId}") }
+                    succeededTests.forEach {
+                        writer.appendln("* ${it.key.tags} ${it.key.uniqueId}")
+                    }
                 }
                 writer.appendln()
 
@@ -135,8 +137,8 @@ fun main(args: Array<String>) {
                                 .throwable
                                 .filter { it !is NotImplementedError }
                                 .isPresent) {
-                            
-                            writer.appendln("* ${e.key.uniqueId}")
+
+                            writer.appendln("* ${e.key.tags} ${e.key.uniqueId}")
 
                             val ex = e.value.throwable.get()
 
