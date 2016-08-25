@@ -146,7 +146,7 @@ fun main(args: Array<String>) {
                                     writer.appendln("        * ${it.key} -> ${it.value}")
                                 }
                             } else {
-                                writer.appendln("    * ${ex.message}")
+                                writer.appendln("    * ${ex.javaClass.name} : ${ex.message}")
                             }
                         }
                     }
