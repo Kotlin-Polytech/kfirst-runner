@@ -11,6 +11,7 @@ import org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage
 import org.junit.platform.engine.support.descriptor.JavaMethodSource
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder
 import org.junit.platform.launcher.core.LauncherFactory
+import ru.spbstu.kotlin.generate.context.Gens
 import ru.spbstu.runner.util.CustomContextClassLoaderExecutor
 import ru.spbstu.runner.util.GoogleApiFacade
 import ru.spbstu.runner.util.TestReportListener
@@ -46,6 +47,9 @@ fun main(args: Array<String>) {
                 .build()
 
         val testReport = TestReportListener()
+
+        val seed = Gens.random.nextLong()
+        Gens.random.setSeed(seed)
 
         LauncherFactory
                 .create()
@@ -86,7 +90,9 @@ fun main(args: Array<String>) {
             val pkgTests = allTests[pkg] ?: continue
 
             val succeededTests = pkgTests.filter { SUCCESSFUL == it.value.status }
-            val failedTests = pkgTests.filter { SUCCESSFUL != it.value.status }
+            val failedTests = pkgTests
+                    .filter { SUCCESSFUL != it.value.status }
+                    .filter { it.value.throwable.filter { it !is NotImplementedError }.isPresent }
 
             val allTaggedTests = (tags
                     .map { tag ->
@@ -133,29 +139,26 @@ fun main(args: Array<String>) {
                 if (failedTests.isNotEmpty()) {
                     writer.appendln("Failed:")
                     failedTests.forEach { e ->
-                        if (e.value
-                                .throwable
-                                .filter { it !is NotImplementedError }
-                                .isPresent) {
+                        writer.appendln("* ${e.key.tags} ${e.key.uniqueId}")
 
-                            writer.appendln("* ${e.key.tags} ${e.key.uniqueId}")
+                        val ex = e.value.throwable.get()
 
-                            val ex = e.value.throwable.get()
-
-                            if (ex is TestFailureException) {
-                                writer.appendln("    * Expected: ${ex.expectedOutput}")
-                                writer.appendln("    * Actual: ${ex.output}")
-                                writer.appendln("    * Inputs:")
-                                ex.input.forEach {
-                                    writer.appendln("        * ${it.key} -> ${it.value}")
-                                }
-                                writer.appendln("    * Exception: ${ex.inner}")
-                            } else {
-                                writer.appendln("    * ${ex.javaClass.name} : ${ex.message}")
+                        if (ex is TestFailureException) {
+                            writer.appendln("    * Expected: ${ex.expectedOutput}")
+                            writer.appendln("    * Actual: ${ex.output}")
+                            writer.appendln("    * Inputs:")
+                            ex.input.forEach {
+                                writer.appendln("        * ${it.key} -> ${it.value}")
                             }
+                            writer.appendln("    * Exception: ${ex.inner}")
+                        } else {
+                            writer.appendln("    * ${ex.javaClass.name} : ${ex.message}")
                         }
                     }
                 }
+                writer.appendln()
+
+                writer.appendln("Seed: $seed")
                 writer.appendln()
             }
 
