@@ -102,7 +102,10 @@ fun main(args: Array<String>) {
                                 .map { t -> t.name }
                                 .toSet(),
                         e.value.map { t -> t.value }
-                                .filter { r -> r.throwable.filter { it !is NotImplementedError }.isPresent }
+                                .filter { r ->
+                                    !r.throwable.isPresent ||
+                                            r.throwable.filter { it !is NotImplementedError }.isPresent
+                                }
                 )
             }.let { TestData(it) }
 
