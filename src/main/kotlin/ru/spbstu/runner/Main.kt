@@ -118,7 +118,6 @@ fun main(args: Array<String>) {
             for (tag in tags) {
                 data.add(testData.tagged(tag).succeeded.size)
             }
-            data.add(testData.notTagged.succeeded.size)
 
             File("$pkg.results").writer().use { writer ->
                 writer.appendln("Author: $author")
@@ -167,6 +166,14 @@ fun main(args: Array<String>) {
 
                 writer.appendln("Seed: $seed")
                 writer.appendln()
+
+                val invalidTags = testData.data.filter { it.tags.size > 1 }
+                if (0 != invalidTags.size) {
+                    writer.appendln("Funky tags:")
+                    invalidTags.forEach {
+                        writer.appendln("* ${it.tags} ${it.packageName}/${it.methodName}")
+                    }
+                }
             }
 
             GoogleApiFacade.createSheet(pkg)
