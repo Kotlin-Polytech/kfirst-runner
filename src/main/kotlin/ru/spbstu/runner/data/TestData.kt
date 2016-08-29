@@ -29,6 +29,9 @@ data class TestData(val data: List<TestDatum>) : Iterable<TestDatum> by data {
     val succeeded by lazy { data.filter { it.isSuccess }.let { TestData(it) } }
     val failed by lazy { data.filter { it.isFailure }.let { TestData(it) } }
 
-    fun tagged(tag: String) = data.filter { tag in it.tags }.let { TestData(it) }
+    fun tagged(tag: String) =
+            if ("No tag" == tag) notTagged
+            else data.filter { tag in it.tags }.let { TestData(it) }
+
     val notTagged by lazy { data.filter { it.tags.isEmpty() }.let { TestData(it) } }
 }

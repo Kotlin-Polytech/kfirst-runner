@@ -77,7 +77,8 @@ fun main(args: Array<String>) {
                 "Easy",
                 "Normal",
                 "Hard",
-                "Impossible"
+                "Impossible",
+                "No tag"
         )
 
         for (pkg in packages) {
@@ -117,6 +118,7 @@ fun main(args: Array<String>) {
             for (tag in tags) {
                 data.add(testData.tagged(tag).succeeded.size)
             }
+            data.add(testData.notTagged.succeeded.size)
 
             File("$pkg.results").writer().use { writer ->
                 writer.appendln("Author: $author")
@@ -127,8 +129,9 @@ fun main(args: Array<String>) {
 
                 for (tag in tags) {
                     val tagged = testData.tagged(tag)
-                    if (0 == tagged.size) continue
-                    writer.appendln("$tag: ${tagged.succeeded.size} / ${tagged.size}")
+                    if (0 != tagged.size) {
+                        writer.appendln("$tag: ${tagged.succeeded.size} / ${tagged.size}")
+                    }
                 }
                 writer.appendln()
 
