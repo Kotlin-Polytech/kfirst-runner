@@ -5,13 +5,13 @@ package ru.spbstu.runner
  */
 
 import common.TestFailureException
-import org.junit.platform.engine.TestExecutionResult.Status.SUCCESSFUL
-import org.junit.platform.engine.TestTag
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage
 import org.junit.platform.engine.support.descriptor.JavaMethodSource
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder
 import org.junit.platform.launcher.core.LauncherFactory
 import ru.spbstu.kotlin.generate.context.Gens
+import ru.spbstu.runner.data.TestData
+import ru.spbstu.runner.data.TestDatum
 import ru.spbstu.runner.util.CustomContextClassLoaderExecutor
 import ru.spbstu.runner.util.GoogleApiFacade
 import ru.spbstu.runner.util.TestReportListener
@@ -48,13 +48,15 @@ fun main(args: Array<String>) {
 
         val testReport = TestReportListener()
 
-        val seed = Gens.random.nextLong()
+        val seed = System.getenv("RANDOM_SEED")?.toLong() ?: Gens.random.nextLong()
         Gens.random.setSeed(seed)
 
         LauncherFactory
                 .create()
                 .apply { registerTestExecutionListeners(testReport) }
                 .execute(request)
+
+        System.out.println(testReport.testData)
 
         val allTests = testReport.testData
                 .entries
@@ -64,18 +66,10 @@ fun main(args: Array<String>) {
                             is JavaMethodSource -> {
                                 s.javaClass.`package`.name
                             }
-//                            is JavaClassSource -> {
-//                                s.javaClass.`package`.name
-//                            }
-//                            is JavaPackageSource -> {
-//                                s.packageName
-//                            }
                             else -> ""
                         }
-                    }.orElseGet { "" }
+                    }.orElse("")
                 }
-
-        val NO_TAGS = TestTag.create("No tags")
 
         val tags = listOf(
                 "Example",
@@ -84,75 +78,82 @@ fun main(args: Array<String>) {
                 "Normal",
                 "Hard",
                 "Impossible"
-        ).map { TestTag.create(it) }
+        )
 
         for (pkg in packages) {
             val pkgTests = allTests[pkg] ?: continue
 
-            val succeededTests = pkgTests.filter { SUCCESSFUL == it.value.status }
-            val failedTests = pkgTests
-                    .filter { SUCCESSFUL != it.value.status }
-                    .filter { it.value.throwable.filter { it !is NotImplementedError }.isPresent }
+            val methodTests = pkgTests.groupBy { e ->
+                e.key.source.map { s ->
+                    when (s) {
+                        is JavaMethodSource -> {
+                            s.javaMethodName
+                        }
+                        else -> ""
+                    }
+                }.orElse("")
+            }
 
-            val allTaggedTests = (tags
-                    .map { tag ->
-                        Pair(
-                                tag,
-                                pkgTests.filter { tag in it.key.tags }
-                        )
-                    } + Pair(NO_TAGS, pkgTests.filter { it.key.tags.isEmpty() }))
-                    .toMap()
+            val testData = methodTests.map { e ->
+                TestDatum(
+                        pkg,
+                        e.key,
+                        e.value.flatMap { t -> t.key.tags }
+                                .map { t -> t.name }
+                                .toSet(),
+                        e.value.map { t -> t.value }
+                                .filter { r -> r.throwable.filter { it !is NotImplementedError }.isPresent }
+                )
+            }.let { TestData(it) }
 
             val data = mutableListOf<Any>()
 
             data.add(DateTimeFormatter.ISO_INSTANT.format(Date().toInstant()))
             data.add(author)
 
-            for ((tag, taggedTests) in allTaggedTests) {
-                val succeededTests = taggedTests.filter { SUCCESSFUL == it.value.status }
-                data.add(succeededTests.size)
+            for (tag in tags) {
+                data.add(testData.tagged(tag).succeeded.size)
             }
 
             File("$pkg.results").writer().use { writer ->
                 writer.appendln("Author: $author")
                 writer.appendln()
 
-                writer.appendln("Total: ${succeededTests.size} / ${pkgTests.size}")
+                writer.appendln("Total: ${testData.succeeded.size} / ${testData.size}")
                 writer.appendln()
 
-                for ((tag, taggedTests) in allTaggedTests) {
-                    if (taggedTests.isEmpty()) continue
-
-                    val succeededTests = taggedTests.filter { SUCCESSFUL == it.value.status }
-                    writer.appendln("${tag.name}: ${succeededTests.size} / ${taggedTests.size}")
+                for (tag in tags) {
+                    val tagged = testData.tagged(tag)
+                    if (0 == tagged.size) continue
+                    writer.appendln("$tag: ${tagged.succeeded.size} / ${tagged.size}")
                 }
                 writer.appendln()
 
-                if (succeededTests.isNotEmpty()) {
+                if (0 != testData.succeeded.size) {
                     writer.appendln("Succeeded:")
-                    succeededTests.forEach {
-                        writer.appendln("* ${it.key.tags} ${it.key.uniqueId}")
+                    testData.succeeded.forEach {
+                        writer.appendln("* ${it.tags} ${it.packageName}/${it.methodName}")
                     }
                 }
                 writer.appendln()
 
-                if (failedTests.isNotEmpty()) {
+                if (0 != testData.failed.size) {
                     writer.appendln("Failed:")
-                    failedTests.forEach { e ->
-                        writer.appendln("* ${e.key.tags} ${e.key.uniqueId}")
+                    testData.failed.forEach { t ->
+                        t.exceptions.forEach { ex ->
+                            writer.appendln("* ${t.tags} ${t.packageName}/${t.methodName}")
 
-                        val ex = e.value.throwable.get()
-
-                        if (ex is TestFailureException) {
-                            writer.appendln("    * Expected: ${ex.expectedOutput}")
-                            writer.appendln("    * Actual: ${ex.output}")
-                            writer.appendln("    * Inputs:")
-                            ex.input.forEach {
-                                writer.appendln("        * ${it.key} -> ${it.value}")
+                            if (ex is TestFailureException) {
+                                writer.appendln("    * Expected: ${ex.expectedOutput}")
+                                writer.appendln("    * Actual: ${ex.output}")
+                                writer.appendln("    * Inputs:")
+                                ex.input.forEach {
+                                    writer.appendln("        * ${it.key} -> ${it.value}")
+                                }
+                                writer.appendln("    * Exception: ${ex.inner}")
+                            } else {
+                                writer.appendln("    * ${ex.javaClass.name} : ${ex.message}")
                             }
-                            writer.appendln("    * Exception: ${ex.inner}")
-                        } else {
-                            writer.appendln("    * ${ex.javaClass.name} : ${ex.message}")
                         }
                     }
                 }
