@@ -28,6 +28,7 @@ fun main(args: Array<String>) {
     val packages = args.drop(1)
 
     val author = File("author.results").readText()
+    val owner = File("owner.results").readText()
 
     println("Classpath roots: ${classpathRoots.joinToString()}")
     println("Test packages: ${packages.joinToString()}")
@@ -114,6 +115,7 @@ fun main(args: Array<String>) {
 
             data.add(DateTimeFormatter.ISO_INSTANT.format(Date().toInstant()))
             data.add(author)
+            data.add(owner)
 
             for (tag in tags) {
                 data.add(testData.tagged(tag).succeeded.size)
@@ -121,6 +123,9 @@ fun main(args: Array<String>) {
 
             File("$pkg.results").writer().use { writer ->
                 writer.appendln("Author: $author")
+                writer.appendln()
+
+                writer.appendln("Owner: $owner")
                 writer.appendln()
 
                 writer.appendln("Total: ${testData.succeeded.size} / ${testData.size}")
