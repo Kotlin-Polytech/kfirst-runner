@@ -12,6 +12,7 @@ import org.junit.platform.launcher.core.LauncherFactory
 import ru.spbstu.kotlin.generate.context.Gens
 import ru.spbstu.runner.data.TestData
 import ru.spbstu.runner.data.TestDatum
+import ru.spbstu.runner.util.ConsoleReportListener
 import ru.spbstu.runner.util.CustomContextClassLoaderExecutor
 import ru.spbstu.runner.util.GoogleApiFacade
 import ru.spbstu.runner.util.TestReportListener
@@ -48,13 +49,17 @@ fun main(args: Array<String>) {
                 .build()
 
         val testReport = TestReportListener()
+        val consoleReport = ConsoleReportListener()
 
         val seed = System.getenv("RANDOM_SEED")?.toLong() ?: Gens.random.nextLong()
         Gens.random.setSeed(seed)
 
         LauncherFactory
                 .create()
-                .apply { registerTestExecutionListeners(testReport) }
+                .apply {
+                    registerTestExecutionListeners(testReport)
+                    registerTestExecutionListeners(consoleReport)
+                }
                 .execute(request)
 
         System.out.println(testReport.testData)
