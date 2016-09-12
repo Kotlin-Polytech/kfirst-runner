@@ -28,6 +28,8 @@ fun main(args: Array<String>) {
             .toList()
     val packages = args.drop(1)
 
+    // TODO: Support for nested packages
+
     val author = File("author.results").readText()
     val owner = File("owner.results").readText()
 
@@ -115,6 +117,8 @@ fun main(args: Array<String>) {
                                 }
                 )
             }.let { TestData(it) }
+
+            if (testData.all { "Example" in it.tags }) continue
 
             val data = mutableListOf<Any>()
 
