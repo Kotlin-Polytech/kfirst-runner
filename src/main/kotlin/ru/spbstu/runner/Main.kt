@@ -118,7 +118,8 @@ fun main(args: Array<String>) {
                 )
             }.let { TestData(it) }
 
-            if (testData.succeeded.all { "Example" in it.tags }) continue
+            if (testData.succeeded.all { "Example" in it.tags }
+                    && 0 == testData.failed.size) continue
 
             val data = mutableListOf<Any>()
 
