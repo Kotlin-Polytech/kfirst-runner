@@ -12,10 +12,7 @@ import org.junit.platform.launcher.core.LauncherFactory
 import ru.spbstu.kotlin.generate.context.Gens
 import ru.spbstu.runner.data.TestData
 import ru.spbstu.runner.data.TestDatum
-import ru.spbstu.runner.util.ConsoleReportListener
-import ru.spbstu.runner.util.CustomContextClassLoaderExecutor
-import ru.spbstu.runner.util.GoogleApiFacade
-import ru.spbstu.runner.util.TestReportListener
+import ru.spbstu.runner.util.*
 import java.io.File
 import java.net.URL
 import java.net.URLClassLoader
@@ -164,11 +161,14 @@ fun main(args: Array<String>) {
                             writer.appendln("* ${t.tags} ${t.packageName}/${t.methodName}")
 
                             if (ex is TestFailureException) {
-                                writer.appendln("    * Expected: ${ex.expectedOutput}")
-                                writer.appendln("    * Actual: ${ex.output}")
+                                writer.appendln("    * Expected:")
+                                writer.appendln("${codifyString(ex.expectedOutput)}")
+                                writer.appendln("    * Actual:")
+                                writer.appendln("${codifyString(ex.output)}")
                                 writer.appendln("    * Inputs:")
                                 ex.input.forEach {
-                                    writer.appendln("        * ${it.key} -> ${it.value}")
+                                    writer.appendln("        * ${it.key} ->")
+                                    writer.appendln("${codifyString(it.value)}")
                                 }
                                 writer.appendln("    * Exception: ${ex.inner}")
                             } else {
