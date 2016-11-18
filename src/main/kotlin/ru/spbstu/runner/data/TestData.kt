@@ -24,14 +24,20 @@ data class TestDatum(
 }
 
 data class TestData(val data: List<TestDatum>) : Iterable<TestDatum> by data {
+
+    constructor() : this(emptyList())
+
     val size by lazy { data.size }
 
-    val succeeded by lazy { data.filter { it.isSuccess }.let { TestData(it) } }
-    val failed by lazy { data.filter { it.isFailure }.let { TestData(it) } }
+    val succeeded by lazy { data.filter { it.isSuccess }.let(::TestData) }
+    val failed by lazy { data.filter { it.isFailure }.let(::TestData) }
 
     fun tagged(tag: String) =
             if ("No tag" == tag) notTagged
-            else data.filter { tag in it.tags }.let { TestData(it) }
+            else data.filter { tag in it.tags }.let(::TestData)
 
-    val notTagged by lazy { data.filter { it.tags.isEmpty() }.let { TestData(it) } }
+    val notTagged by lazy { data.filter { it.tags.isEmpty() }.let(::TestData) }
+
+    operator fun plus(other: TestData) = TestData(data + other.data)
+
 }

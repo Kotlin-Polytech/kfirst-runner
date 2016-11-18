@@ -86,6 +86,8 @@ fun main(args: Array<String>) {
                 "No tag"
         )
 
+        var totalTestData = TestData()
+
         for (pkg in packages) {
             val pkgTests = allTests[pkg] ?: continue
 
@@ -113,7 +115,9 @@ fun main(args: Array<String>) {
                                             r.throwable.filter { it !is NotImplementedError }.isPresent
                                 }
                 )
-            }.let { TestData(it) }
+            }.let(::TestData)
+
+            totalTestData += testData
 
             if (testData.succeeded.all { "Example" in it.tags }
                     && 0 == testData.failed.size) continue
@@ -195,6 +199,27 @@ fun main(args: Array<String>) {
 
             GoogleApiFacade.appendToSheet(pkg, data.map { it.toString() })
 
+        }
+
+        // FIXME: DRY
+
+        File("total.results").writer().use { writer ->
+            writer.appendln("Author: $author")
+            writer.appendln()
+
+            writer.appendln("Owner: $owner")
+            writer.appendln()
+
+            writer.appendln("Total: ${totalTestData.succeeded.size} / ${totalTestData.size}")
+            writer.appendln()
+
+            for (tag in tags) {
+                val tagged = totalTestData.tagged(tag)
+                if (0 != tagged.size) {
+                    writer.appendln("$tag: ${tagged.succeeded.size} / ${tagged.size}")
+                }
+            }
+            writer.appendln()
         }
 
     }
