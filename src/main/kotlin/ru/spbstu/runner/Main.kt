@@ -166,13 +166,13 @@ fun main(args: Array<String>) {
 
                             if (ex is TestFailureException) {
                                 writer.appendln("    * Expected:")
-                                writer.appendln("${codifyString(ex.expectedOutput)}")
+                                writer.appendln("${codifyString(ex.expectedOutput, "    ")}")
                                 writer.appendln("    * Actual:")
-                                writer.appendln("${codifyString(ex.output)}")
+                                writer.appendln("${codifyString(ex.output, "    ")}")
                                 writer.appendln("    * Inputs:")
                                 ex.input.forEach {
                                     writer.appendln("        * ${it.key} ->")
-                                    writer.appendln("${codifyString(it.value)}")
+                                    writer.appendln("${codifyString(it.value, "        ")}")
                                 }
                                 writer.appendln("    * Exception: ${ex.inner}")
                             } else {
