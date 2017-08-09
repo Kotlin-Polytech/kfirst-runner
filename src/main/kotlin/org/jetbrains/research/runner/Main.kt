@@ -34,8 +34,8 @@ val TAGS = listOf(
 
 interface Args {
     val projectDir: String
-    val packages: List<String>
     val classpathPrefix: List<String>
+    val packages: List<String>
     val authorFile: String
     val ownerFile: String
     val resultFile: String
@@ -46,10 +46,10 @@ class ParserArgs(parser: ArgParser) : Args {
 
     override val projectDir by parser.storing("-d", help = "project dir")
 
-    override val packages by parser.adding("-p", help = "test packages")
-
     override val classpathPrefix by parser.adding("-c", "--classpath-prefix", help = "classpath prefix",
-            initialValue = mutableListOf("target/classes/", "target/test-classes/")) { this }
+            initialValue = mutableListOf("/target/classes/", "/target/test-classes/")) { this }
+
+    override val packages by parser.adding("-p", help = "test packages")
 
     override val authorFile by parser.storing("-a", help = "author file")
             .default("author.name")
@@ -67,8 +67,8 @@ class ParserArgs(parser: ArgParser) : Args {
 
 data class RunnerArgs(
         override val projectDir: String,
+        override val classpathPrefix: List<String> = mutableListOf("/target/classes/", "/target/test-classes/"),
         override val packages: List<String>,
-        override val classpathPrefix: List<String> = mutableListOf("target/classes/", "target/test-classes/"),
         override val authorFile: String = "author.name",
         override val ownerFile: String = "owner.name",
         override val resultFile: String = "results.json",
@@ -83,7 +83,7 @@ class KFirstRunner {
 
         val classpathRoots =
                 args.classpathPrefix
-                        .map { "${args.projectDir}/$it" }
+                        .map { "${args.projectDir}$it" }
                         .map { URL(it) }
         val packages = args.packages
 
