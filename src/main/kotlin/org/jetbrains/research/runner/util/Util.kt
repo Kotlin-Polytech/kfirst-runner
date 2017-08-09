@@ -1,4 +1,4 @@
-package ru.spbstu.runner.util
+package org.jetbrains.research.runner.util
 
 fun String.mapLines(f: (String) -> String): String =
         lineSequence().map(f).joinToString("\n")

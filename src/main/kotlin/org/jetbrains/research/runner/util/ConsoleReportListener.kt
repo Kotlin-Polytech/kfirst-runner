@@ -1,4 +1,4 @@
-package ru.spbstu.runner.util
+package org.jetbrains.research.runner.util
 
 import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.launcher.TestExecutionListener

@@ -1,9 +1,9 @@
-package ru.spbstu.runner.util
+package org.jetbrains.research.runner.util
 
+import org.jetbrains.research.runner.data.TestDataMap
 import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.launcher.TestExecutionListener
 import org.junit.platform.launcher.TestIdentifier
-import ru.spbstu.runner.data.TestDataMap
 
 class TestReportListener : TestExecutionListener {
 

@@ -1,21 +1,21 @@
-package ru.spbstu.runner
+package org.jetbrains.research.runner
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
+import org.jetbrains.research.runner.data.*
+import org.jetbrains.research.runner.util.ConsoleReportListener
+import org.jetbrains.research.runner.util.CustomContextClassLoaderExecutor
+import org.jetbrains.research.runner.util.GoogleApiFacade
+import org.jetbrains.research.runner.util.TestReportListener
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder
 import org.junit.platform.launcher.core.LauncherFactory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import ru.spbstu.kotlin.generate.context.Gens
-import ru.spbstu.runner.data.*
-import ru.spbstu.runner.util.ConsoleReportListener
-import ru.spbstu.runner.util.CustomContextClassLoaderExecutor
-import ru.spbstu.runner.util.GoogleApiFacade
-import ru.spbstu.runner.util.TestReportListener
 import java.io.File
 import java.net.URL
 import java.net.URLClassLoader

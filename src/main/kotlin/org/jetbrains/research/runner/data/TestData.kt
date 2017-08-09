@@ -1,4 +1,4 @@
-package ru.spbstu.runner.data
+package org.jetbrains.research.runner.data
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonTypeInfo

@@ -1,4 +1,4 @@
-package ru.spbstu.runner.util
+package org.jetbrains.research.runner.util
 
 class CustomContextClassLoaderExecutor(val customClassLoader: ClassLoader) {
 
