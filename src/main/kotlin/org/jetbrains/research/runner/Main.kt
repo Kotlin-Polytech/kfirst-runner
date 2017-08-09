@@ -76,99 +76,101 @@ data class RunnerArgs(
 
 val logger: Logger = LoggerFactory.getLogger("Main")
 
-fun main(arguments: Array<String>) = run(ParserArgs(ArgParser(arguments)))
+fun main(arguments: Array<String>) = KFirstRunner().run(ParserArgs(ArgParser(arguments)))
 
-fun run(args: Args) {
+class KFirstRunner {
+    fun run(args: Args) {
 
-    val classpathRoots =
-            args.classpathPrefix
-                    .map { "${args.projectDir}/$it" }
-                    .map { URL(it) }
-    val packages = args.packages
+        val classpathRoots =
+                args.classpathPrefix
+                        .map { "${args.projectDir}/$it" }
+                        .map { URL(it) }
+        val packages = args.packages
 
-    // TODO: Support for nested packages
+        // TODO: Support for nested packages
 
-    val author = File(args.authorFile).readText()
-    val owner = File(args.ownerFile).readText()
+        val author = File(args.authorFile).readText()
+        val owner = File(args.ownerFile).readText()
 
-    logger.info("Classpath roots: ${classpathRoots.joinToString()}")
-    logger.info("Test packages: ${packages.joinToString()}")
+        logger.info("Classpath roots: ${classpathRoots.joinToString()}")
+        logger.info("Test packages: ${packages.joinToString()}")
 
-    CustomContextClassLoaderExecutor(
-            URLClassLoader(
-                    classpathRoots.toTypedArray(),
-                    Thread.currentThread().contextClassLoader
-            )
-    ).invoke {
-
-        val request = LauncherDiscoveryRequestBuilder
-                .request()
-                .selectors(
-                        packages.map { selectPackage(it) }
+        CustomContextClassLoaderExecutor(
+                URLClassLoader(
+                        classpathRoots.toTypedArray(),
+                        Thread.currentThread().contextClassLoader
                 )
-                .build()
+        ).invoke {
 
-        val testReport = TestReportListener()
-        val consoleReport = ConsoleReportListener()
-
-        val seed = (System.getenv("RANDOM_SEED")?.toLong() ?: Gens.random.nextLong())
-                .apply { Gens.random.setSeed(this) }
-
-        LauncherFactory
-                .create()
-                .apply {
-                    registerTestExecutionListeners(testReport)
-                    registerTestExecutionListeners(consoleReport)
-                }
-                .execute(request)
-
-        with(testReport) {
-
-            logger.info("$testData")
-
-            val mapper = ObjectMapper().apply {
-                registerModule(KotlinModule())
-                registerModule(Jdk8Module())
-            }
-
-            var totalTestData = TestData()
-
-            for ((pkg, pkgTests) in testData.groupByPackages().filterKeys { "" != it }) {
-
-                val methodTests = pkgTests.groupByMethods()
-
-                val testData = methodTests.map { (method, tests) ->
-                    TestDatum(
-                            pkg,
-                            method,
-                            tests.flatMap { (id, _) -> id.tags }
-                                    .map { tag -> tag.name }
-                                    .toSet(),
-                            tests.map { (_, r) -> r.toTestResult() }
+            val request = LauncherDiscoveryRequestBuilder
+                    .request()
+                    .selectors(
+                            packages.map { selectPackage(it) }
                     )
-                }.let(::TestData)
+                    .build()
 
-                totalTestData += testData
+            val testReport = TestReportListener()
+            val consoleReport = ConsoleReportListener()
 
-                if (args.sendToGoogle) {
-                    val data = mutableListOf<Any>()
+            val seed = (System.getenv("RANDOM_SEED")?.toLong() ?: Gens.random.nextLong())
+                    .apply { Gens.random.setSeed(this) }
 
-                    data.add(DateTimeFormatter.ISO_INSTANT.format(Date().toInstant()))
-                    data.add(author)
-                    data.add(owner)
+            LauncherFactory
+                    .create()
+                    .apply {
+                        registerTestExecutionListeners(testReport)
+                        registerTestExecutionListeners(consoleReport)
+                    }
+                    .execute(request)
 
-                    TAGS.mapTo(data) { testData.tagged(it).succeeded.size }
+            with(testReport) {
 
-                    GoogleApiFacade.createSheet(pkg)
-                    GoogleApiFacade.appendToSheet(pkg, data.map { it.toString() })
+                logger.info("$testData")
+
+                val mapper = ObjectMapper().apply {
+                    registerModule(KotlinModule())
+                    registerModule(Jdk8Module())
+                }
+
+                var totalTestData = TestData()
+
+                for ((pkg, pkgTests) in testData.groupByPackages().filterKeys { "" != it }) {
+
+                    val methodTests = pkgTests.groupByMethods()
+
+                    val testData = methodTests.map { (method, tests) ->
+                        TestDatum(
+                                pkg,
+                                method,
+                                tests.flatMap { (id, _) -> id.tags }
+                                        .map { tag -> tag.name }
+                                        .toSet(),
+                                tests.map { (_, r) -> r.toTestResult() }
+                        )
+                    }.let(::TestData)
+
+                    totalTestData += testData
+
+                    if (args.sendToGoogle) {
+                        val data = mutableListOf<Any>()
+
+                        data.add(DateTimeFormatter.ISO_INSTANT.format(Date().toInstant()))
+                        data.add(author)
+                        data.add(owner)
+
+                        TAGS.mapTo(data) { testData.tagged(it).succeeded.size }
+
+                        GoogleApiFacade.createSheet(pkg)
+                        GoogleApiFacade.appendToSheet(pkg, data.map { it.toString() })
+                    }
+
+                }
+
+                File(args.resultFile).writer().use {
+                    mapper.writeValue(it, totalTestData)
                 }
 
             }
-
-            File(args.resultFile).writer().use {
-                mapper.writeValue(it, totalTestData)
-            }
-
         }
     }
 }
