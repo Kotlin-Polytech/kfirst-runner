@@ -1,5 +1,6 @@
 package ru.spbstu.runner.util
 
+import com.google.api.client.auth.oauth2.Credential
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow
@@ -12,10 +13,6 @@ import com.google.api.services.sheets.v4.SheetsScopes
 import com.google.api.services.sheets.v4.model.*
 import java.io.File
 import java.io.InputStreamReader
-
-/**
- * Created by akhin on 8/23/16.
- */
 
 object GoogleApiFacade {
 
@@ -43,7 +40,7 @@ object GoogleApiFacade {
                 }
     }
 
-    val credential by lazy {
+    val credential: Credential by lazy {
         val mySecret = this.javaClass.getResourceAsStream("/client_secret.json")
         val clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, InputStreamReader(mySecret))
 
@@ -63,7 +60,7 @@ object GoogleApiFacade {
                 .authorize("user")
     }
 
-    val sheets by lazy {
+    val sheets: Sheets by lazy {
         Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
                 .setApplicationName(APPLICATION_NAME)
                 .build()

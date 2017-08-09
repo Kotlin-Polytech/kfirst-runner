@@ -1,12 +1,9 @@
 package ru.spbstu.runner.util
 
-class CustomContextClassLoaderExecutor(val customClassLoader: ClassLoader?) {
+class CustomContextClassLoaderExecutor(val customClassLoader: ClassLoader) {
 
     operator fun <T> invoke(callable: () -> T): T {
-        if (customClassLoader != null) {
-            return replaceThreadContextClassLoaderAndInvoke(customClassLoader, callable)
-        }
-        return callable()
+        return replaceThreadContextClassLoaderAndInvoke(customClassLoader, callable)
     }
 
     private fun <T> replaceThreadContextClassLoaderAndInvoke(

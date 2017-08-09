@@ -1,5 +1,7 @@
 package common
 
+// XXX: Keep in sync with the other side...
+
 class TestFailureException(
         val expectedOutput: Any?,
         val output: Any?,

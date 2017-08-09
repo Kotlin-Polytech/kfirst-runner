@@ -11,15 +11,33 @@
     <repositories>
         <repository>
             <id>jitpack.io</id>
+            <name>jitpack</name>
             <url>https://jitpack.io</url>
+        </repository>
+        <repository>
+            <id>bintray-xenomachina-maven</id>
+            <name>bintray</name>
+            <url>http://dl.bintray.com/xenomachina/maven</url>
         </repository>
     </repositories>
 
     <properties>
-        <kotlin.version>1.0.3</kotlin.version>
-        <junit.jupiter.version>5.0.0-M2</junit.jupiter.version>
-        <junit.vintage.version>4.12.0-M2</junit.vintage.version>
-        <junit.platform.version>1.0.0-M2</junit.platform.version>
+        <project.build.sourceEncoding>
+            UTF-8
+        </project.build.sourceEncoding>
+        <project.reporting.outputEncoding>
+            UTF-8
+        </project.reporting.outputEncoding>
+
+        <kotlin.version>1.1.3-2</kotlin.version>
+        <junit.jupiter.version>5.0.0-RC2</junit.jupiter.version>
+        <junit.vintage.version>4.12.0-RC2</junit.vintage.version>
+        <junit.platform.version>1.0.0-RC2</junit.platform.version>
+        <kotlin.argparser>2.0.3</kotlin.argparser>
+        <slf4j.version>1.7.25</slf4j.version>
+        <logback.version>1.0.13</logback.version>
+        <jackson.version>2.9.0</jackson.version>
+        <google.api.version>1.22.0</google.api.version>
     </properties>
 
     <dependencies>
@@ -37,6 +55,37 @@
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-runtime</artifactId>
             <version>${kotlin.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.xenomachina</groupId>
+            <artifactId>kotlin-argparser</artifactId>
+            <version>${kotlin.argparser}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-kotlin</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jdk8</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
 
         <dependency>
@@ -63,17 +112,17 @@
         <dependency>
             <groupId>com.google.api-client</groupId>
             <artifactId>google-api-client</artifactId>
-            <version>1.22.0</version>
+            <version>${google.api.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.oauth-client</groupId>
             <artifactId>google-oauth-client-jetty</artifactId>
-            <version>1.22.0</version>
+            <version>${google.api.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-sheets</artifactId>
-            <version>v4-rev19-1.22.0</version>
+            <version>v4-rev482-${google.api.version}</version>
         </dependency>
 
         <dependency>
@@ -106,6 +155,9 @@
                 <artifactId>kotlin-maven-plugin</artifactId>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <version>${kotlin.version}</version>
+                <configuration>
+                    <jvmTarget>1.8</jvmTarget>
+                </configuration>
                 <executions>
                     <execution>
                         <id>compile</id>

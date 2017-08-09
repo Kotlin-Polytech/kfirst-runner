@@ -1,37 +1,78 @@
 package ru.spbstu.runner
 
-/**
- * Created by akhin on 8/15/16.
- */
-
-import common.TestFailureException
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
+import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.xenomachina.argparser.ArgParser
+import com.xenomachina.argparser.default
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage
-import org.junit.platform.engine.support.descriptor.JavaMethodSource
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder
 import org.junit.platform.launcher.core.LauncherFactory
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import ru.spbstu.kotlin.generate.context.Gens
-import ru.spbstu.runner.data.TestData
-import ru.spbstu.runner.data.TestDatum
-import ru.spbstu.runner.util.*
+import ru.spbstu.runner.data.*
+import ru.spbstu.runner.util.ConsoleReportListener
+import ru.spbstu.runner.util.CustomContextClassLoaderExecutor
+import ru.spbstu.runner.util.GoogleApiFacade
+import ru.spbstu.runner.util.TestReportListener
 import java.io.File
 import java.net.URL
 import java.net.URLClassLoader
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-fun main(args: Array<String>) {
-    val classpathRoots = sequenceOf(args[0])
-            .flatMap { sequenceOf(URL("$it/classes/"), URL("$it/test-classes/")) }
-            .toList()
-    val packages = args.drop(1)
+val TAGS = listOf(
+        "Example",
+        "Trivial",
+        "Easy",
+        "Normal",
+        "Hard",
+        "Impossible",
+        "No tag"
+)
+
+class Args(parser: ArgParser) {
+
+    val projectDir by parser.storing("-d", help = "project dir")
+
+    val packages by parser.adding("-p", help = "test packages")
+
+    val classpathPrefix by parser.adding("-c", "--classpath-prefix", help = "classpath prefix",
+            initialValue = mutableListOf("target/classes/", "target/test-classes/")) { this }
+
+    val authorFile by parser.storing("-a", help = "author file")
+            .default("author.name")
+
+    val ownerFile by parser.storing("-o", help = "owner file")
+            .default("owner.name")
+
+    val resultFile by parser.storing("-r", help = "result file")
+            .default("results.json")
+
+    val sendToGoogle by parser.flagging("-g", help = "send stats to Google Sheets")
+            .default(false)
+
+}
+
+val logger: Logger = LoggerFactory.getLogger("Main")
+
+fun main(arguments: Array<String>) {
+    val args = Args(ArgParser(arguments))
+
+    val classpathRoots =
+            args.classpathPrefix
+                    .map { "${args.projectDir}/$it" }
+                    .map { URL(it) }
+    val packages = args.packages
 
     // TODO: Support for nested packages
 
-    val author = File("author.results").readText()
-    val owner = File("owner.results").readText()
+    val author = File(args.authorFile).readText()
+    val owner = File(args.ownerFile).readText()
 
-    println("Classpath roots: ${classpathRoots.joinToString()}")
-    println("Test packages: ${packages.joinToString()}")
+    logger.info("Classpath roots: ${classpathRoots.joinToString()}")
+    logger.info("Test packages: ${packages.joinToString()}")
 
     CustomContextClassLoaderExecutor(
             URLClassLoader(
@@ -50,8 +91,8 @@ fun main(args: Array<String>) {
         val testReport = TestReportListener()
         val consoleReport = ConsoleReportListener()
 
-        val seed = System.getenv("RANDOM_SEED")?.toLong() ?: Gens.random.nextLong()
-        Gens.random.setSeed(seed)
+        val seed = (System.getenv("RANDOM_SEED")?.toLong() ?: Gens.random.nextLong())
+                .apply { Gens.random.setSeed(this) }
 
         LauncherFactory
                 .create()
@@ -61,166 +102,53 @@ fun main(args: Array<String>) {
                 }
                 .execute(request)
 
-        System.out.println(testReport.testData)
+        with(testReport) {
 
-        val allTests = testReport.testData
-                .entries
-                .groupBy { e ->
-                    e.key.source.map { s ->
-                        when (s) {
-                            is JavaMethodSource -> {
-                                s.javaClass.`package`.name
-                            }
-                            else -> ""
-                        }
-                    }.orElse("")
-                }
+            logger.info("$testData")
 
-        val tags = listOf(
-                "Example",
-                "Trivial",
-                "Easy",
-                "Normal",
-                "Hard",
-                "Impossible",
-                "No tag"
-        )
-
-        var totalTestData = TestData()
-
-        for (pkg in packages) {
-            val pkgTests = allTests[pkg] ?: continue
-
-            val methodTests = pkgTests.groupBy { e ->
-                e.key.source.map { s ->
-                    when (s) {
-                        is JavaMethodSource -> {
-                            s.javaMethodName
-                        }
-                        else -> ""
-                    }
-                }.orElse("")
+            val mapper = ObjectMapper().apply {
+                registerModule(KotlinModule())
+                registerModule(Jdk8Module())
             }
 
-            val testData = methodTests.map { e ->
-                TestDatum(
-                        pkg,
-                        e.key,
-                        e.value.flatMap { t -> t.key.tags }
-                                .map { t -> t.name }
-                                .toSet(),
-                        e.value.map { t -> t.value }
-                                .filter { r ->
-                                    !r.throwable.isPresent ||
-                                            r.throwable.filter { it !is NotImplementedError }.isPresent
-                                }
-                )
-            }.let(::TestData)
+            var totalTestData = TestData()
 
-            totalTestData += testData
+            for ((pkg, pkgTests) in testData.groupByPackages().filterKeys { "" != it }) {
 
-            if (testData.succeeded.all { "Example" in it.tags }
-                    && 0 == testData.failed.size) continue
+                val methodTests = pkgTests.groupByMethods()
 
-            val data = mutableListOf<Any>()
+                val testData = methodTests.map { (method, tests) ->
+                    TestDatum(
+                            pkg,
+                            method,
+                            tests.flatMap { (id, _) -> id.tags }
+                                    .map { tag -> tag.name }
+                                    .toSet(),
+                            tests.map { (_, r) -> r.toTestResult() }
+                    )
+                }.let(::TestData)
 
-            data.add(DateTimeFormatter.ISO_INSTANT.format(Date().toInstant()))
-            data.add(author)
-            data.add(owner)
+                totalTestData += testData
 
-            for (tag in tags) {
-                data.add(testData.tagged(tag).succeeded.size)
+                if (args.sendToGoogle) {
+                    val data = mutableListOf<Any>()
+
+                    data.add(DateTimeFormatter.ISO_INSTANT.format(Date().toInstant()))
+                    data.add(author)
+                    data.add(owner)
+
+                    TAGS.mapTo(data) { testData.tagged(it).succeeded.size }
+
+                    GoogleApiFacade.createSheet(pkg)
+                    GoogleApiFacade.appendToSheet(pkg, data.map { it.toString() })
+                }
+
             }
 
-            File("$pkg.results").writer().use { writer ->
-                writer.appendln("Author: $author")
-                writer.appendln()
-
-                writer.appendln("Owner: $owner")
-                writer.appendln()
-
-                writer.appendln("Total: ${testData.succeeded.size} / ${testData.size}")
-                writer.appendln()
-
-                for (tag in tags) {
-                    val tagged = testData.tagged(tag)
-                    if (0 != tagged.size) {
-                        writer.appendln("$tag: ${tagged.succeeded.size} / ${tagged.size}")
-                    }
-                }
-                writer.appendln()
-
-                if (0 != testData.succeeded.size) {
-                    writer.appendln("Succeeded:")
-                    testData.succeeded.forEach {
-                        writer.appendln("* ${it.tags} ${it.packageName}/${it.methodName}")
-                    }
-                }
-                writer.appendln()
-
-                if (0 != testData.failed.size) {
-                    writer.appendln("Failed:")
-                    testData.failed.forEach { t ->
-                        t.exceptions.forEach { ex ->
-                            writer.appendln("* ${t.tags} ${t.packageName}/${t.methodName}")
-
-                            if (ex is TestFailureException) {
-                                writer.appendln("    * Expected:")
-                                writer.appendln("${codifyString(ex.expectedOutput, "    ")}")
-                                writer.appendln("    * Actual:")
-                                writer.appendln("${codifyString(ex.output, "    ")}")
-                                writer.appendln("    * Inputs:")
-                                ex.input.forEach {
-                                    writer.appendln("        * ${it.key} ->")
-                                    writer.appendln("${codifyString(it.value, "        ")}")
-                                }
-                                writer.appendln("    * Exception: ${ex.inner}")
-                            } else {
-                                writer.appendln("    * ${ex.javaClass.name} : ${ex.message}")
-                            }
-                        }
-                    }
-                }
-                writer.appendln()
-
-                writer.appendln("Seed: $seed")
-                writer.appendln()
-
-                val invalidTags = testData.data.filter { it.tags.size > 1 }
-                if (0 != invalidTags.size) {
-                    writer.appendln("Funky tags:")
-                    invalidTags.forEach {
-                        writer.appendln("* ${it.tags} ${it.packageName}/${it.methodName}")
-                    }
-                }
+            File(args.resultFile).writer().use {
+                mapper.writeValue(it, totalTestData)
             }
-
-            GoogleApiFacade.createSheet(pkg)
-
-            GoogleApiFacade.appendToSheet(pkg, data.map { it.toString() })
 
         }
-
-        // FIXME: DRY
-
-        File("total.results").writer().use { writer ->
-            writer.appendln("Author: $author")
-            writer.appendln()
-
-            writer.appendln("Owner: $owner")
-            writer.appendln()
-
-            writer.appendln("Total: ${totalTestData.succeeded.size} / ${totalTestData.size}")
-            writer.appendln()
-
-            for (tag in tags) {
-                val tagged = totalTestData.tagged(tag)
-                if (0 != tagged.size) {
-                    writer.appendln("$tag: ${tagged.succeeded.size} / ${tagged.size}")
-                }
-            }
-            writer.appendln()
-        }
-
     }
 }
