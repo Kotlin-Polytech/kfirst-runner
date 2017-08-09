@@ -32,33 +32,53 @@ val TAGS = listOf(
         "No tag"
 )
 
-class Args(parser: ArgParser) {
+interface Args {
+    val projectDir: String
+    val packages: List<String>
+    val classpathPrefix: List<String>
+    val authorFile: String
+    val ownerFile: String
+    val resultFile: String
+    val sendToGoogle: Boolean
+}
 
-    val projectDir by parser.storing("-d", help = "project dir")
+class ParserArgs(parser: ArgParser) : Args {
 
-    val packages by parser.adding("-p", help = "test packages")
+    override val projectDir by parser.storing("-d", help = "project dir")
 
-    val classpathPrefix by parser.adding("-c", "--classpath-prefix", help = "classpath prefix",
+    override val packages by parser.adding("-p", help = "test packages")
+
+    override val classpathPrefix by parser.adding("-c", "--classpath-prefix", help = "classpath prefix",
             initialValue = mutableListOf("target/classes/", "target/test-classes/")) { this }
 
-    val authorFile by parser.storing("-a", help = "author file")
+    override val authorFile by parser.storing("-a", help = "author file")
             .default("author.name")
 
-    val ownerFile by parser.storing("-o", help = "owner file")
+    override val ownerFile by parser.storing("-o", help = "owner file")
             .default("owner.name")
 
-    val resultFile by parser.storing("-r", help = "result file")
+    override val resultFile by parser.storing("-r", help = "result file")
             .default("results.json")
 
-    val sendToGoogle by parser.flagging("-g", help = "send stats to Google Sheets")
+    override val sendToGoogle by parser.flagging("-g", help = "send stats to Google Sheets")
             .default(false)
 
 }
 
+data class RunnerArgs(
+        override val projectDir: String,
+        override val packages: List<String>,
+        override val classpathPrefix: List<String> = mutableListOf("target/classes/", "target/test-classes/"),
+        override val authorFile: String = "author.name",
+        override val ownerFile: String = "owner.name",
+        override val resultFile: String = "results.json",
+        override val sendToGoogle: Boolean = false) : Args
+
 val logger: Logger = LoggerFactory.getLogger("Main")
 
-fun main(arguments: Array<String>) {
-    val args = Args(ArgParser(arguments))
+fun main(arguments: Array<String>) = run(ParserArgs(ArgParser(arguments)))
+
+fun run(args: Args) {
 
     val classpathRoots =
             args.classpathPrefix
