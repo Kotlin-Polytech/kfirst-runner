@@ -89,8 +89,12 @@ class KFirstRunner {
 
         // TODO: Support for nested packages
 
-        val author = File(args.authorFile).readText()
-        val owner = File(args.ownerFile).readText()
+        val author = with(File(args.authorFile)) {
+            if (exists()) readText() else "None"
+        }
+        val owner = with(File(args.ownerFile)) {
+            if (exists()) readText() else "None"
+        }
 
         logger.info("Classpath roots: ${classpathRoots.joinToString()}")
         logger.info("Test packages: ${packages.joinToString()}")
