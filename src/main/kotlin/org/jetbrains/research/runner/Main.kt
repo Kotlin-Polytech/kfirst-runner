@@ -138,9 +138,9 @@ class KFirstRunner {
 
                 var totalTestData = TestData()
 
-                for ((pkg, pkgTests) in testData.groupByPackages().filterKeys { "" != it }) {
+                for ((pkg, pkgTests) in testData.groupByClassName().filterKeys { "" != it }) {
 
-                    val methodTests = pkgTests.groupByMethods()
+                    val methodTests = pkgTests.groupByMethodName()
 
                     val testData = methodTests.map { (method, tests) ->
                         TestDatum(

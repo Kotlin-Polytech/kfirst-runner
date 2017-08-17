@@ -83,21 +83,19 @@ data class TestData(val data: List<TestDatum>) : Iterable<TestDatum> by data {
 typealias TestDataMap = MutableMap<TestIdentifier, TestExecutionResult>
 typealias TestDataList = List<Map.Entry<TestIdentifier, TestExecutionResult>>
 
-fun TestDataMap.groupByPackages() = entries
+fun TestDataMap.groupByClassName() = entries
         .groupBy { (id, _) ->
             id.source.map { s ->
                 when (s) {
                     is MethodSource -> {
                         s.className
-                                .replaceAfterLast('.', "")
-                                .dropLast(1)
                     }
                     else -> ""
                 }
             }.orElse("")
         }
 
-fun TestDataList.groupByMethods() =
+fun TestDataList.groupByMethodName() =
         groupBy { (id, _) ->
             id.source.map { s ->
                 when (s) {
