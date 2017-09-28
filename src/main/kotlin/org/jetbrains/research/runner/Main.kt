@@ -171,7 +171,7 @@ class KFirstRunner {
                 }
 
                 File(args.resultFile).writer().use {
-                    mapper.writeValue(it, totalTestData)
+                    mapper.writerWithDefaultPrettyPrinter().writeValue(it, totalTestData)
                 }
 
             }
