@@ -1,6 +1,7 @@
 package org.jetbrains.research.runner
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.xenomachina.argparser.ArgParser
@@ -134,6 +135,7 @@ class KFirstRunner {
                 val mapper = ObjectMapper().apply {
                     registerModule(KotlinModule())
                     registerModule(Jdk8Module())
+                    configure(JsonGenerator.Feature.ESCAPE_NON_ASCII, true)
                 }
 
                 var totalTestData = TestData()
