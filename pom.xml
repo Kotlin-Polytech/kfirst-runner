@@ -6,7 +6,7 @@
 
     <groupId>org.jetbrains.research</groupId>
     <artifactId>kfirst-runner</artifactId>
-    <version>0.1.4</version>
+    <version>0.1.6</version>
 
     <distributionManagement>
         <repository>
