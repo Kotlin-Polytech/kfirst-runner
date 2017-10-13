@@ -6,6 +6,7 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 import org.jetbrains.research.runner.data.*
+import org.jetbrains.research.runner.junit.SingleTestExecutorWithTimeout
 import org.jetbrains.research.runner.util.ConsoleReportListener
 import org.jetbrains.research.runner.util.CustomContextClassLoaderExecutor
 import org.jetbrains.research.runner.util.GoogleApiFacade
@@ -17,10 +18,13 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import ru.spbstu.kotlin.generate.context.Gens
 import java.io.File
+import java.lang.reflect.Field
+import java.lang.reflect.Modifier
 import java.net.URL
 import java.net.URLClassLoader
 import java.time.format.DateTimeFormatter
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 val TAGS = listOf(
         "Example",
@@ -106,6 +110,25 @@ class KFirstRunner {
                 )
         ).invoke {
 
+            val executor = SingleTestExecutorWithTimeout(50, TimeUnit.SECONDS)
+
+            val executorField =
+                    Class.forName(
+                            "org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor")
+                            .getDeclaredField("singleTestExecutor")
+
+            val modifiers = Field::class.java
+                    .getDeclaredField("modifiers")
+            modifiers.isAccessible = true
+            modifiers.setInt(executorField, executorField.modifiers and Modifier.FINAL.inv())
+
+            executorField.isAccessible = true
+            executorField.set(null, executor)
+            executorField.isAccessible = false
+
+            modifiers.setInt(executorField, executorField.modifiers or Modifier.FINAL)
+            modifiers.isAccessible = false
+
             val request = LauncherDiscoveryRequestBuilder
                     .request()
                     .selectors(
@@ -124,6 +147,7 @@ class KFirstRunner {
                     .apply {
                         registerTestExecutionListeners(testReport)
                         registerTestExecutionListeners(consoleReport)
+                        registerTestExecutionListeners(executor.fubarListener)
                     }
                     .execute(request)
 
