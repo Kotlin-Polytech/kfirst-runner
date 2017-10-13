@@ -43,6 +43,7 @@ interface Args {
     val authorFile: String
     val ownerFile: String
     val resultFile: String
+    val timeout: Long
     val sendToGoogle: Boolean
 }
 
@@ -64,6 +65,9 @@ class ParserArgs(parser: ArgParser) : Args {
     override val resultFile by parser.storing("-r", help = "result file")
             .default("results.json")
 
+    override val timeout by parser.storing("-t", help = "timeout") { toLong() }
+            .default(50L)
+
     override val sendToGoogle by parser.flagging("-g", help = "send stats to Google Sheets")
             .default(false)
 
@@ -76,6 +80,7 @@ data class RunnerArgs(
         override val authorFile: String = "author.name",
         override val ownerFile: String = "owner.name",
         override val resultFile: String = "results.json",
+        override val timeout: Long = 50L,
         override val sendToGoogle: Boolean = false) : Args
 
 val logger: Logger = LoggerFactory.getLogger("Main")
@@ -110,7 +115,7 @@ class KFirstRunner {
                 )
         ).invoke {
 
-            val executor = SingleTestExecutorWithTimeout(50, TimeUnit.SECONDS)
+            val executor = SingleTestExecutorWithTimeout(args.timeout, TimeUnit.SECONDS)
 
             val executorField =
                     Class.forName(
