@@ -6,7 +6,7 @@
 
     <groupId>org.jetbrains.research</groupId>
     <artifactId>kfirst-runner</artifactId>
-    <version>0.1.6</version>
+    <version>0.1.7</version>
 
     <distributionManagement>
         <repository>
@@ -148,7 +148,7 @@
             src/main/kotlin
         </sourceDirectory>
         <testSourceDirectory>
-            src/test/kotlin
+            test/main/kotlin
         </testSourceDirectory>
 
         <plugins>

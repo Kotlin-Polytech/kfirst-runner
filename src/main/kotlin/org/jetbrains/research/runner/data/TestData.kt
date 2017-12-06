@@ -2,6 +2,7 @@ package org.jetbrains.research.runner.data
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.databind.node.ObjectNode
 import common.TestFailureException
 import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.engine.TestExecutionResult.Status.SUCCESSFUL
@@ -15,8 +16,10 @@ import java.util.*
         property = "@class")
 sealed class FailureDatum
 
+data class TestInput(val data: Map<String, Any?>)
+
 data class TestFailureDatum(
-        val input: Map<String, Any?>,
+        val input: TestInput,
         val output: Any?,
         val expectedOutput: Any?,
         val nestedException: String
@@ -36,7 +39,7 @@ fun TestExecutionResult.toTestResult(): TestResult {
     val failure = throwable.map { ex ->
         if (ex is TestFailureException) {
             TestFailureDatum(
-                    ex.input,
+                    TestInput(ex.input),
                     ex.output,
                     ex.expectedOutput,
                     "${ex.inner}")

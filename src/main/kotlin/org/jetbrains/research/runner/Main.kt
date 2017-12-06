@@ -7,6 +7,7 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 import org.jetbrains.research.runner.data.*
+import org.jetbrains.research.runner.jackson.makeMapper
 import org.jetbrains.research.runner.junit.SingleTestExecutorWithTimeout
 import org.jetbrains.research.runner.util.ConsoleReportListener
 import org.jetbrains.research.runner.util.CustomContextClassLoaderExecutor
@@ -161,11 +162,7 @@ class KFirstRunner {
 
                 logger.info("$testData")
 
-                val mapper = ObjectMapper().apply {
-                    registerModule(KotlinModule())
-                    registerModule(Jdk8Module())
-                    configure(JsonGenerator.Feature.ESCAPE_NON_ASCII, true)
-                }
+                val mapper = makeMapper()
 
                 var totalTestData = TestData()
 
