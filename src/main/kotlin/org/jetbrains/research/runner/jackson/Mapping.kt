@@ -28,7 +28,7 @@ object ExceptionSerializer: JsonSerializer<Exception>() {
     override fun serialize(value: Exception, gen: JsonGenerator, serializers: SerializerProvider) {
         gen.writeStartObject()
         gen.writeStringField("class", value::class.toString())
-        gen.writeStringField("message", value.message)
+        gen.writeStringField("message", value.message?.take(4096))
         gen.writeEndObject()
     }
 }
