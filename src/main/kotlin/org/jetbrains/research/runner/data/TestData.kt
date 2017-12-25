@@ -42,10 +42,10 @@ fun TestExecutionResult.toTestResult(): TestResult {
                     TestInput(ex.input),
                     ex.output,
                     ex.expectedOutput,
-                    "${ex.inner}".take(32768))
+                    "${ex.inner}".take(8096))
         } else {
             UnknownFailureDatum(
-                    "${ex.javaClass.name} : ${ex.message}".take(32768)
+                    "${ex.javaClass.name} : ${ex.message}".take(8096)
             )
         }
     }
