@@ -29,27 +29,43 @@ data class UnknownFailureDatum(
         val nestedException: String
 ) : FailureDatum()
 
+enum class TestResultStatus {
+    SUCCESSFUL, ABORTED, FAILED, NOT_IMPLEMENTED
+}
+
+fun TestExecutionResult.Status.toOurStatus(): TestResultStatus = enumValueOf(toString())
+
 data class TestResult(
-        val status: TestExecutionResult.Status,
-        val failure: Optional<FailureDatum>
+        val status: TestResultStatus,
+        val failure: FailureDatum? = null
 )
 
 fun TestExecutionResult.toTestResult(): TestResult {
-    val status = status
-    val failure = throwable.map { ex ->
-        if (ex is TestFailureException) {
-            TestFailureDatum(
-                    TestInput(ex.input),
-                    ex.output,
-                    ex.expectedOutput,
-                    "${ex.inner}".take(8096))
-        } else {
-            UnknownFailureDatum(
-                    "${ex.javaClass.name} : ${ex.message}".take(8096)
+    val status = status.toOurStatus()
+    val ex: Throwable? = throwable.orElse(null)
+    return when (ex) {
+        is TestFailureException ->
+            TestResult(
+                    status,
+                    TestFailureDatum(
+                            TestInput(ex.input),
+                            ex.output,
+                            ex.expectedOutput,
+                            "${ex.inner}".take(8096)
+                    )
             )
-        }
+        is NotImplementedError ->
+            TestResult(TestResultStatus.NOT_IMPLEMENTED)
+        null ->
+            TestResult(status)
+        else ->
+            TestResult(
+                    status,
+                    UnknownFailureDatum(
+                            "${ex.javaClass.name} : ${ex.message}".take(8096)
+                    )
+            )
     }
-    return TestResult(status, failure)
 }
 
 @JsonIgnoreProperties("success", "failure")
