@@ -2,13 +2,11 @@ package org.jetbrains.research.runner.data
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonTypeInfo
-import com.fasterxml.jackson.databind.node.ObjectNode
 import common.TestFailureException
 import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.engine.TestExecutionResult.Status.SUCCESSFUL
 import org.junit.platform.engine.support.descriptor.MethodSource
 import org.junit.platform.launcher.TestIdentifier
-import java.util.*
 
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.CLASS,
