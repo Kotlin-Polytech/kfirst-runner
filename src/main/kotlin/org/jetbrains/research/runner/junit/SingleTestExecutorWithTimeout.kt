@@ -46,7 +46,7 @@ class SingleTestExecutorWithTimeout(
                 fubarExecutable()
             } else {
                 stl.callWithTimeout(
-                        fubarExecutable, timeOut, timeUnit, true
+                        fubarExecutable, timeOut, timeUnit
                 )
             }
         } catch (e: UncheckedTimeoutException) {
@@ -61,7 +61,7 @@ class SingleTestExecutorWithTimeout(
     }
 
     companion object {
-        private val stl = SimpleTimeLimiter(
+        private val stl = SimpleTimeLimiter.create(
                 Executors.newCachedThreadPool(
                         ThreadFactoryBuilder()
                                 .setDaemon(true)
