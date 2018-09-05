@@ -47,7 +47,6 @@
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.0.13</logback.version>
         <jackson.version>2.9.0</jackson.version>
-        <google.api.version>1.22.0</google.api.version>
         <kcheck.version>0.0.0.2</kcheck.version>
     </properties>
 
@@ -118,22 +117,6 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>${junit.jupiter.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.api-client</groupId>
-            <artifactId>google-api-client</artifactId>
-            <version>${google.api.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.oauth-client</groupId>
-            <artifactId>google-oauth-client-jetty</artifactId>
-            <version>${google.api.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.apis</groupId>
-            <artifactId>google-api-services-sheets</artifactId>
-            <version>v4-rev482-${google.api.version}</version>
         </dependency>
 
         <dependency>

@@ -7,7 +7,6 @@ import org.jetbrains.research.runner.jackson.makeMapper
 import org.jetbrains.research.runner.junit.SingleTestExecutorWithTimeout
 import org.jetbrains.research.runner.util.ConsoleReportListener
 import org.jetbrains.research.runner.util.CustomContextClassLoaderExecutor
-import org.jetbrains.research.runner.util.GoogleApiFacade
 import org.jetbrains.research.runner.util.TestReportListener
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder
@@ -20,8 +19,6 @@ import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import java.net.URL
 import java.net.URLClassLoader
-import java.time.format.DateTimeFormatter
-import java.util.*
 import java.util.concurrent.TimeUnit
 
 val TAGS = listOf(
@@ -42,7 +39,6 @@ interface Args {
     val ownerFile: String
     val resultFile: String
     val timeout: Long
-    val sendToGoogle: Boolean
 }
 
 class ParserArgs(parser: ArgParser) : Args {
@@ -65,10 +61,6 @@ class ParserArgs(parser: ArgParser) : Args {
 
     override val timeout by parser.storing("-t", help = "timeout") { toLong() }
             .default(50L)
-
-    override val sendToGoogle by parser.flagging("-g", help = "send stats to Google Sheets")
-            .default(false)
-
 }
 
 data class RunnerArgs(
@@ -78,8 +70,7 @@ data class RunnerArgs(
         override val authorFile: String = "author.name",
         override val ownerFile: String = "owner.name",
         override val resultFile: String = "results.json",
-        override val timeout: Long = 50L,
-        override val sendToGoogle: Boolean = false) : Args
+        override val timeout: Long = 50L) : Args
 
 val logger: Logger = LoggerFactory.getLogger("Main")
 
@@ -178,19 +169,6 @@ class KFirstRunner {
                     }.let(::TestData)
 
                     totalTestData += testData
-
-                    if (args.sendToGoogle) {
-                        val data = mutableListOf<Any>()
-
-                        data.add(DateTimeFormatter.ISO_INSTANT.format(Date().toInstant()))
-                        data.add(author)
-                        data.add(owner)
-
-                        TAGS.mapTo(data) { testData.tagged(it).succeeded.size }
-
-                        GoogleApiFacade.createSheet(pkg)
-                        GoogleApiFacade.appendToSheet(pkg, data.map { it.toString() })
-                    }
 
                 }
 
