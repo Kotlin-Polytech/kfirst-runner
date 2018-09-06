@@ -6,7 +6,7 @@
 
     <groupId>org.jetbrains.research</groupId>
     <artifactId>kfirst-runner</artifactId>
-    <version>0.1.15</version>
+    <version>0.1.16</version>
 
     <distributionManagement>
         <repository>
@@ -40,9 +40,9 @@
         </project.reporting.outputEncoding>
 
         <kotlin.version>1.2.51</kotlin.version>
-        <junit.jupiter.version>5.0.0-RC2</junit.jupiter.version>
-        <junit.vintage.version>4.12.0-RC2</junit.vintage.version>
-        <junit.platform.version>1.0.0-RC2</junit.platform.version>
+        <junit.jupiter.version>5.0.0</junit.jupiter.version>
+        <junit.vintage.version>4.12.0</junit.vintage.version>
+        <junit.platform.version>1.0.0</junit.platform.version>
         <kotlin.argparser>2.0.3</kotlin.argparser>
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.0.13</logback.version>
