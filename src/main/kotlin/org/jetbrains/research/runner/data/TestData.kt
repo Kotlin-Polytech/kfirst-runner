@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import common.TestFailureException
 import org.junit.platform.engine.TestExecutionResult
-import org.junit.platform.engine.TestExecutionResult.Status.SUCCESSFUL
 import org.junit.platform.engine.support.descriptor.MethodSource
 import org.junit.platform.launcher.TestIdentifier
 
@@ -73,8 +72,8 @@ data class TestDatum(
         val tags: Set<String>,
         val results: List<TestResult>
 ) {
-    val isSuccess by lazy { results.isNotEmpty() && results.all { SUCCESSFUL == it.status } }
-    val isFailure by lazy { results.isNotEmpty() && results.any { SUCCESSFUL != it.status } }
+    val isSuccess by lazy { results.isNotEmpty() && results.all { TestResultStatus.SUCCESSFUL == it.status } }
+    val isFailure by lazy { results.isNotEmpty() && results.any { it.status in setOf(TestResultStatus.FAILED, TestResultStatus.ABORTED) } }
 }
 
 @JsonIgnoreProperties("size", "succeeded", "failed", "notTagged")
