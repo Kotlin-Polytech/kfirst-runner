@@ -1,8 +1,6 @@
 package org.jetbrains.research.runner.jackson
 
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.core.TreeNode
+import com.fasterxml.jackson.core.*
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonSerializer
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -10,13 +8,17 @@ import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.type.TypeFactory
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import org.jetbrains.research.runner.data.TestData
 import org.jetbrains.research.runner.data.TestInput
+import java.io.File
 
-fun TreeNode.traverseToNext() = traverse().apply { nextToken() }
+fun TreeNode.traverseToNext(): JsonParser = traverse().apply { nextToken() }
+fun TreeNode.traverseToNext(codec: ObjectCodec): JsonParser = traverse(codec).apply { nextToken() }
 
 object MapSerializer : JsonSerializer<Map<*, *>>() {
     override fun serialize(value: Map<*, *>, gen: JsonGenerator, serializers: SerializerProvider) {
@@ -39,7 +41,14 @@ object MapDeserializer : StdDeserializer<Map<*, *>>(Map::class.java) {
 
         val res = mutableMapOf<Any?, Any?>()
 
-        val entryArray: ArrayNode = p.codec.readTree(p)
+        val tree: TreeNode = p.codec.readTree(p)
+
+        val entryArray = when (tree) {
+            is ArrayNode -> tree
+            is ObjectNode -> JsonNodeFactory.instance.arrayNode().apply { add(tree) }
+            else -> throw JsonParseException(p, "Cannot deserialize Map")
+        }
+
         for (entry in entryArray) {
             val obj = entry as ObjectNode
             val key = deser.deserialize(obj["key"].traverseToNext(), ctxt)
@@ -95,7 +104,7 @@ object InputDeserializer : StdDeserializer<TestInput>(TestInput::class.java) {
         val inputObject: ObjectNode = p.codec.readTree(p)
         for (field in inputObject.fields()) {
             val key = field.key
-            val value = deser.deserialize(field.value.traverseToNext(), ctxt)
+            val value = deser.deserialize(field.value.traverseToNext(p.codec), ctxt)
 
             inputMap[key] = value
         }
@@ -120,4 +129,10 @@ fun makeMapper() = ObjectMapper().apply {
     registerModule(serializationModule)
     registerModule(deserializationModule)
     configure(JsonGenerator.Feature.ESCAPE_NON_ASCII, true)
+}
+
+fun main(args: Array<String>) {
+    val mapper = makeMapper()
+
+    mapper.readValue(File("results.json"), TestData::class.java)
 }
