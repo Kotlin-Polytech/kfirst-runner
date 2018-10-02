@@ -1,11 +1,10 @@
 package org.jetbrains.research.runner.jackson
 
 import com.fasterxml.jackson.core.*
-import com.fasterxml.jackson.databind.DeserializationContext
-import com.fasterxml.jackson.databind.JsonSerializer
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializerProvider
+import com.fasterxml.jackson.databind.*
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer
+import com.fasterxml.jackson.databind.jsontype.TypeDeserializer
+import com.fasterxml.jackson.databind.jsontype.TypeSerializer
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
@@ -62,11 +61,22 @@ object MapDeserializer : StdDeserializer<Map<*, *>>(Map::class.java) {
 }
 
 object ExceptionSerializer : JsonSerializer<Exception>() {
-    override fun serialize(value: Exception, gen: JsonGenerator, serializers: SerializerProvider) {
-        gen.writeStartObject()
+    private fun doSerialize(value: Exception, gen: JsonGenerator, @Suppress("UNUSED_PARAMETER") serializers: SerializerProvider) {
         gen.writeStringField("class", value::class.qualifiedName)
         gen.writeStringField("message", value.message?.take(4096))
+    }
+
+    override fun serialize(value: Exception, gen: JsonGenerator, serializers: SerializerProvider) {
+        gen.writeStartObject()
+        doSerialize(value, gen, serializers)
         gen.writeEndObject()
+    }
+
+    override fun serializeWithType(value: Exception, gen: JsonGenerator, serializers: SerializerProvider, typeSer: TypeSerializer) {
+        val typeId = typeSer.typeId(value, JsonToken.START_OBJECT)
+        typeSer.writeTypePrefix(gen, typeId)
+        doSerialize(value, gen, serializers)
+        typeSer.writeTypeSuffix(gen, typeId)
     }
 }
 
@@ -82,6 +92,10 @@ object ExceptionDeserializer : StdDeserializer<Exception>(Exception::class.java)
                 ?.firstOrNull { arrayOf(String::class.java).contentEquals(it.parameterTypes) }
 
         return exCtor?.newInstance(message) as? Exception ?: Exception(message)
+    }
+
+    override fun deserializeWithType(p: JsonParser, ctxt: DeserializationContext, typeDeserializer: TypeDeserializer): Any {
+        return typeDeserializer.deserializeTypedFromAny(p, ctxt)
     }
 }
 
@@ -118,6 +132,7 @@ val serializationModule: SimpleModule = SimpleModule()
         .addSerializer(Map::class.java, MapSerializer)
         .addSerializer(Exception::class.java, ExceptionSerializer)
         .addSerializer(TestInput::class.java, InputSerializer)
+        .also { CustomSerializers.injectIntoModule(it) }
 
 val deserializationModule: SimpleModule = SimpleModule()
         .addDeserializer(Map::class.java, MapDeserializer)
@@ -130,10 +145,13 @@ fun makeMapper() = ObjectMapper().apply {
     registerModule(serializationModule)
     registerModule(deserializationModule)
     configure(JsonGenerator.Feature.ESCAPE_NON_ASCII, true)
+    configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 }
 
 fun main(args: Array<String>) {
     val mapper = makeMapper()
 
-    mapper.readValue(File("results.json"), TestData::class.java)
+    val value = mapper.readValue(File("results.json"), TestData::class.java)
+
+    mapper.writeValue(File("out.json"), value)
 }
