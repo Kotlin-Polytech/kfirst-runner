@@ -17,8 +17,14 @@ data class TestInput(val data: Map<String, Any?>)
 
 data class TestFailureDatum(
         val input: TestInput,
-        val output: Any?,
-        val expectedOutput: Any?,
+        @JsonTypeInfo(
+                use = JsonTypeInfo.Id.CLASS,
+                include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
+                property = "@outputClass") val output: Any?,
+        @JsonTypeInfo(
+                use = JsonTypeInfo.Id.CLASS,
+                include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
+                property = "@expectedOutputClass") val expectedOutput: Any?,
         val nestedException: String
 ) : FailureDatum()
 

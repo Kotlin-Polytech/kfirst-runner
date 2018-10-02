@@ -17,7 +17,7 @@ class ObjectMapperTest {
         assertEquals(/* language=JSON */"""{"a":"b","Hello":[{"key":1,"value":2}]}""",
                 mapper.writeValueAsString(TestInput(mapOf("a" to "b", "Hello" to mapOf( 1 to 2)))))
 
-        assertEquals(/* language=JSON */"""{"class":"class java.lang.IllegalArgumentException","message":"Foo"}""",
+        assertEquals(/* language=JSON */"""{"class":"java.lang.IllegalArgumentException","message":"Foo"}""",
                 mapper.writeValueAsString(IllegalArgumentException("Foo")))
 
 

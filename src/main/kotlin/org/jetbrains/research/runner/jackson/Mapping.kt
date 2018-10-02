@@ -64,7 +64,7 @@ object MapDeserializer : StdDeserializer<Map<*, *>>(Map::class.java) {
 object ExceptionSerializer : JsonSerializer<Exception>() {
     override fun serialize(value: Exception, gen: JsonGenerator, serializers: SerializerProvider) {
         gen.writeStartObject()
-        gen.writeStringField("class", value::class.toString())
+        gen.writeStringField("class", value::class.qualifiedName)
         gen.writeStringField("message", value.message?.take(4096))
         gen.writeEndObject()
     }
@@ -73,6 +73,7 @@ object ExceptionSerializer : JsonSerializer<Exception>() {
 object ExceptionDeserializer : StdDeserializer<Exception>(Exception::class.java) {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Exception {
         val obj: ObjectNode = p.codec.readTree(p)
+
         val className = obj["class"].textValue()
         val message = obj["message"].textValue()
 
