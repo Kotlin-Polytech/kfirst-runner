@@ -78,13 +78,14 @@ internal class NumberSerializers {
 
         protected val _isInt: Boolean
 
-        override fun getSchema(provider: SerializerProvider, typeHint: Type): JsonNode {
+        override fun getSchema(provider: SerializerProvider,
+                               typeHint: Type?): JsonNode {
             return createSchemaNode(_schemaType, true)
         }
 
         @Throws(JsonMappingException::class)
         override fun acceptJsonFormatVisitor(visitor: JsonFormatVisitorWrapper,
-                                             typeHint: JavaType) {
+                                             typeHint: JavaType?) {
             if (_isInt) {
                 visitIntFormat(visitor, typeHint, _numberType)
             } else {
@@ -94,7 +95,7 @@ internal class NumberSerializers {
 
         @Throws(JsonMappingException::class)
         override fun createContextual(prov: SerializerProvider,
-                                      property: BeanProperty): JsonSerializer<*> {
+                                      property: BeanProperty?): JsonSerializer<*> {
             val format = findFormatOverrides(prov, property, handledType())
             return when (format?.shape) {
                 STRING -> return ToStringSerializer.instance
@@ -102,7 +103,10 @@ internal class NumberSerializers {
             }
         }
 
-        override fun serializeWithType(value: T, g: JsonGenerator, provider: SerializerProvider, typeSer: TypeSerializer) {
+        override fun serializeWithType(value: T,
+                                       g: JsonGenerator,
+                                       provider: SerializerProvider,
+                                       typeSer: TypeSerializer) {
             val typeId = typeSer.typeId(value, JsonToken.VALUE_STRING)
             typeSer.writeTypePrefix(g, typeId)
             serialize(value, g, provider)
@@ -114,7 +118,7 @@ internal class NumberSerializers {
     internal class ShortSerializer : Base<Any>(Short::class.java, JsonParser.NumberType.INT, "number") {
 
         @Throws(IOException::class)
-        override fun serialize(value: Any,
+        override fun serialize(value: Any?,
                                gen: JsonGenerator,
                                provider: SerializerProvider) {
             gen.writeNumber((value as Short).toShort())
@@ -129,7 +133,7 @@ internal class NumberSerializers {
     internal class IntegerSerializer(type: Class<*>) : Base<Any>(type, JsonParser.NumberType.INT, "integer") {
 
         @Throws(IOException::class)
-        override fun serialize(value: Any,
+        override fun serialize(value: Any?,
                                gen: JsonGenerator,
                                provider: SerializerProvider) {
             gen.writeNumber((value as Int).toInt())
@@ -140,7 +144,7 @@ internal class NumberSerializers {
     internal class IntLikeSerializer : Base<Any>(Number::class.java, JsonParser.NumberType.INT, "integer") {
 
         @Throws(IOException::class)
-        override fun serialize(value: Any,
+        override fun serialize(value: Any?,
                                gen: JsonGenerator,
                                provider: SerializerProvider) {
             gen.writeNumber((value as Number).toInt())
@@ -155,7 +159,7 @@ internal class NumberSerializers {
     internal class LongSerializer(cls: Class<*>) : Base<Any>(cls, JsonParser.NumberType.LONG, "number") {
 
         @Throws(IOException::class)
-        override fun serialize(value: Any,
+        override fun serialize(value: Any?,
                                gen: JsonGenerator,
                                provider: SerializerProvider) {
             gen.writeNumber((value as Long).toLong())
@@ -166,7 +170,7 @@ internal class NumberSerializers {
     internal class FloatSerializer : Base<Any>(Float::class.java, JsonParser.NumberType.FLOAT, "number") {
 
         @Throws(IOException::class)
-        override fun serialize(value: Any,
+        override fun serialize(value: Any?,
                                gen: JsonGenerator,
                                provider: SerializerProvider) {
             gen.writeNumber((value as Float).toFloat())
@@ -181,7 +185,7 @@ internal class NumberSerializers {
     internal class DoubleSerializer(cls: Class<*>) : Base<Any>(cls, JsonParser.NumberType.DOUBLE, "number") {
 
         @Throws(IOException::class)
-        override fun serialize(value: Any,
+        override fun serialize(value: Any?,
                                gen: JsonGenerator,
                                provider: SerializerProvider) {
             gen.writeNumber((value as Double).toDouble())
@@ -195,7 +199,7 @@ internal class BooleanSerializer(private val _forPrimitive: Boolean)
 
     @Throws(JsonMappingException::class)
     override fun createContextual(serializers: SerializerProvider,
-                                  property: BeanProperty): JsonSerializer<*> {
+                                  property: BeanProperty?): JsonSerializer<*> {
         val format = findFormatOverrides(serializers, property, Boolean::class.java)
         if (format != null) {
             val shape = format.shape
@@ -207,12 +211,14 @@ internal class BooleanSerializer(private val _forPrimitive: Boolean)
     }
 
     @Throws(IOException::class)
-    override fun serialize(value: Any, g: JsonGenerator, provider: SerializerProvider) {
+    override fun serialize(value: Any?,
+                           g: JsonGenerator,
+                           provider: SerializerProvider) {
         g.writeBoolean(java.lang.Boolean.TRUE == value)
     }
 
     @Throws(IOException::class)
-    override fun serializeWithType(value: Any,
+    override fun serializeWithType(value: Any?,
                                    g: JsonGenerator,
                                    provider: SerializerProvider,
                                    typeSer: TypeSerializer) {
@@ -222,12 +228,14 @@ internal class BooleanSerializer(private val _forPrimitive: Boolean)
         typeSer.writeTypeSuffix(g, typeId)
     }
 
-    override fun getSchema(provider: SerializerProvider, typeHint: Type): JsonNode {
+    override fun getSchema(provider: SerializerProvider,
+                           typeHint: Type?): JsonNode {
         return createSchemaNode("boolean", !_forPrimitive)
     }
 
     @Throws(JsonMappingException::class)
-    override fun acceptJsonFormatVisitor(visitor: JsonFormatVisitorWrapper, typeHint: JavaType) {
+    override fun acceptJsonFormatVisitor(visitor: JsonFormatVisitorWrapper,
+                                         typeHint: JavaType?) {
         visitor.expectBooleanFormat(typeHint)
     }
 
@@ -235,12 +243,14 @@ internal class BooleanSerializer(private val _forPrimitive: Boolean)
         : StdScalarSerializer<Any>(if (_forPrimitive) java.lang.Boolean.TYPE else Boolean::class.java, false), ContextualSerializer {
 
         @Throws(IOException::class)
-        override fun serialize(value: Any, g: JsonGenerator, provider: SerializerProvider) {
+        override fun serialize(value: Any?,
+                               g: JsonGenerator,
+                               provider: SerializerProvider) {
             g.writeNumber(if (java.lang.Boolean.FALSE == value) 0 else 1)
         }
 
         @Throws(IOException::class)
-        override fun serializeWithType(value: Any,
+        override fun serializeWithType(value: Any?,
                                        g: JsonGenerator,
                                        provider: SerializerProvider,
                                        typeSer: TypeSerializer) {
@@ -251,13 +261,14 @@ internal class BooleanSerializer(private val _forPrimitive: Boolean)
         }
 
         @Throws(JsonMappingException::class)
-        override fun acceptJsonFormatVisitor(visitor: JsonFormatVisitorWrapper, typeHint: JavaType) {
+        override fun acceptJsonFormatVisitor(visitor: JsonFormatVisitorWrapper,
+                                             typeHint: JavaType?) {
             visitIntFormat(visitor, typeHint, JsonParser.NumberType.INT)
         }
 
         @Throws(JsonMappingException::class)
         override fun createContextual(serializers: SerializerProvider,
-                                      property: BeanProperty): JsonSerializer<*> {
+                                      property: BeanProperty?): JsonSerializer<*> {
             val format = findFormatOverrides(serializers, property, Boolean::class.java)
             if (format != null) {
                 val shape = format.shape
@@ -281,33 +292,35 @@ internal class BooleanSerializer(private val _forPrimitive: Boolean)
 @JacksonStdImpl
 internal class StringSerializer : StdScalarSerializer<Any>(String::class.java, false) {
 
-    override fun isEmpty(prov: SerializerProvider, value: Any): Boolean {
-        val str = value as String
-        return str.isEmpty()
+    override fun isEmpty(prov: SerializerProvider, value: Any?): Boolean {
+        val str = value as? String
+        return str?.isEmpty() ?: true
     }
 
     @Throws(IOException::class)
-    override fun serialize(value: Any, gen: JsonGenerator, provider: SerializerProvider) {
-        gen.writeString(value as String)
+    override fun serialize(value: Any?, gen: JsonGenerator, provider: SerializerProvider) {
+        gen.writeString(value as? String)
     }
 
     @Throws(IOException::class)
-    override fun serializeWithType(value: Any,
+    override fun serializeWithType(value: Any?,
                                    gen: JsonGenerator,
                                    provider: SerializerProvider,
                                    typeSer: TypeSerializer) {
         val typeId = typeSer.typeId(value, JsonToken.VALUE_STRING)
         typeSer.writeTypePrefix(gen, typeId)
-        gen.writeString(value as String)
+        gen.writeString(value as? String)
         typeSer.writeTypeSuffix(gen, typeId)
     }
 
-    override fun getSchema(provider: SerializerProvider, typeHint: Type): JsonNode {
+    override fun getSchema(provider: SerializerProvider,
+                           typeHint: Type?): JsonNode {
         return createSchemaNode("string", true)
     }
 
     @Throws(JsonMappingException::class)
-    override fun acceptJsonFormatVisitor(visitor: JsonFormatVisitorWrapper, typeHint: JavaType) {
+    override fun acceptJsonFormatVisitor(visitor: JsonFormatVisitorWrapper,
+                                         typeHint: JavaType?) {
         visitStringFormat(visitor, typeHint)
     }
 
