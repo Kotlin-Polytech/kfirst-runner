@@ -68,9 +68,9 @@ object TestFailureSerializer : StdSerializer<TestFailureDatum>(TestFailureDatum:
 
         val typeId = typeSer.typeId(value, TestFailureDatum::class.java, JsonToken.START_OBJECT)
 
-        gen.writeTypePrefix(typeId)
+        typeSer.writeTypePrefix(gen, typeId)
         doSerialize(value, gen, serializers)
-        gen.writeTypeSuffix(typeId)
+        typeSer.writeTypeSuffix(gen, typeId)
     }
 }
 
@@ -209,7 +209,7 @@ object InputDeserializer : StdDeserializer<TestInput>(TestInput::class.java) {
         val inputMap = mutableMapOf<String, Any?>()
 
         val inputObject: ObjectNode = p.codec.readTree(p)
-        
+
         for (field in inputObject.fields()) {
             val key = field.key
             val value = unknownDeserializer.deserialize(
