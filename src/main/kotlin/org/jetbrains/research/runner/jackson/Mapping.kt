@@ -19,16 +19,19 @@ import org.jetbrains.research.runner.data.TestFailureDatum
 import org.jetbrains.research.runner.data.TestInput
 import java.io.File
 
-fun TreeNode.traverseToNext(codec: ObjectCodec): JsonParser = traverse(codec).apply { nextToken() }
+private fun TreeNode.traverseToNext(codec: ObjectCodec): JsonParser = traverse(codec).apply { nextToken() }
 
-fun Class<*>.unwrap(): Class<*> =
+private fun Class<*>.unwrap(): Class<*> =
         when {
             Throwable::class.java.isAssignableFrom(this) -> Throwable::class.java
             Map::class.java.isAssignableFrom(this) -> Map::class.java
             else -> this
         }
 
-val Any?.jsonClassName: String?
+private val String.jsonClassFieldName: String
+    get() = "@${this}Class"
+
+private val Any?.jsonClassName: String?
     get() = if (this != null)
         this::class.java.unwrap().canonicalName
     else
@@ -39,9 +42,11 @@ object TestFailureSerializer : StdSerializer<TestFailureDatum>(TestFailureDatum:
                             gen: JsonGenerator,
                             provider: SerializerProvider) {
         provider.defaultSerializeField("input", value.input, gen)
-        provider.defaultSerializeField("@outputClass", value.output.jsonClassName, gen)
+        provider.defaultSerializeField("output".jsonClassFieldName,
+                value.output.jsonClassName, gen)
         provider.defaultSerializeField("output", value.output, gen)
-        provider.defaultSerializeField("@expectedOutputClass", value.expectedOutput.jsonClassName, gen)
+        provider.defaultSerializeField("expectedOutput".jsonClassFieldName,
+                value.expectedOutput.jsonClassName, gen)
         provider.defaultSerializeField("expectedOutput", value.expectedOutput, gen)
         provider.defaultSerializeField("nestedException", value.nestedException, gen)
     }
@@ -84,8 +89,8 @@ object TestFailureDeserializer : StdDeserializer<TestFailureDatum>(TestFailureDa
 
         val tree: ObjectNode = p.codec.readTree(p)
 
-        val outputClass = tree["@outputClass"].asText()
-        val expectedOutputClass = tree["@expectedOutputClass"].asText()
+        val outputClass = tree["output".jsonClassFieldName].asText()
+        val expectedOutputClass = tree["expectedOutput".jsonClassFieldName].asText()
 
         val outputDeserializer = ctxt.findNonContextualValueDeserializer(
                 ctxt.constructType(
@@ -198,6 +203,15 @@ object InputSerializer : JsonSerializer<TestInput>() {
             gen.writeFieldName(k)
             serializers.defaultSerializeValue(v, gen)
         }
+
+        gen.writeFieldName("@metadata")
+        gen.writeStartObject()
+        for ((k, v) in value.data) {
+            gen.writeFieldName(k.jsonClassFieldName)
+            gen.writeString(v.jsonClassName)
+        }
+        gen.writeEndObject()
+
         gen.writeEndObject()
     }
 }
@@ -205,16 +219,23 @@ object InputSerializer : JsonSerializer<TestInput>() {
 object InputDeserializer : StdDeserializer<TestInput>(TestInput::class.java) {
     override fun deserialize(p: JsonParser,
                              ctxt: DeserializationContext): TestInput {
-        val unknownDeserializer = ctxt.findNonContextualValueDeserializer(
-                TypeFactory.unknownType())
-
         val inputMap = mutableMapOf<String, Any?>()
 
         val inputObject: ObjectNode = p.codec.readTree(p)
 
+        val metadata = inputObject["@metadata"]
+
         for (field in inputObject.fields()) {
             val key = field.key
-            val value = unknownDeserializer.deserialize(
+
+            if (key == "@metadata") continue
+
+            val keyClass = metadata[key.jsonClassFieldName].asText()
+            val deserializer = ctxt.findNonContextualValueDeserializer(
+                    ctxt.constructType(
+                            ctxt.findClass(keyClass)))
+
+            val value = deserializer.deserialize(
                     field.value.traverseToNext(p.codec), ctxt)
 
             inputMap[key] = value
