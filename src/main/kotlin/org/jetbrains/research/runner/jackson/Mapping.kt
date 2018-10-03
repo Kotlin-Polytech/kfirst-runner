@@ -84,7 +84,7 @@ object TestFailureSerializer : StdSerializer<TestFailureDatum>(TestFailureDatum:
 object TestFailureDeserializer : StdDeserializer<TestFailureDatum>(TestFailureDatum::class.java) {
     override fun deserialize(p: JsonParser,
                              ctxt: DeserializationContext): TestFailureDatum {
-        val testInputDeserializer = ctxt.findNonContextualValueDeserializer(
+        val testInputDeserializer = ctxt.findRootValueDeserializer(
                 ctxt.constructType(TestInput::class.java))
 
         val tree: ObjectNode = p.codec.readTree(p)
@@ -92,10 +92,10 @@ object TestFailureDeserializer : StdDeserializer<TestFailureDatum>(TestFailureDa
         val outputClass = tree["output".jsonClassFieldName].asText()
         val expectedOutputClass = tree["expectedOutput".jsonClassFieldName].asText()
 
-        val outputDeserializer = ctxt.findNonContextualValueDeserializer(
+        val outputDeserializer = ctxt.findRootValueDeserializer(
                 ctxt.constructType(
                         ctxt.findClass(outputClass)))
-        val expectedOutputDeserializer = ctxt.findNonContextualValueDeserializer(
+        val expectedOutputDeserializer = ctxt.findRootValueDeserializer(
                 ctxt.constructType(
                         ctxt.findClass(expectedOutputClass)))
 
@@ -136,7 +136,7 @@ object MapSerializer : JsonSerializer<Map<*, *>>() {
 object MapDeserializer : StdDeserializer<Map<*, *>>(Map::class.java) {
     override fun deserialize(p: JsonParser,
                              ctxt: DeserializationContext): Map<*, *> {
-        val unknownDeserializer = ctxt.findNonContextualValueDeserializer(
+        val unknownDeserializer = ctxt.findRootValueDeserializer(
                 TypeFactory.unknownType())
 
         val res = mutableMapOf<Any?, Any?>()
@@ -231,7 +231,7 @@ object InputDeserializer : StdDeserializer<TestInput>(TestInput::class.java) {
             if (key == "@metadata") continue
 
             val keyClass = metadata[key.jsonClassFieldName].asText()
-            val deserializer = ctxt.findNonContextualValueDeserializer(
+            val deserializer = ctxt.findRootValueDeserializer(
                     ctxt.constructType(
                             ctxt.findClass(keyClass)))
 
