@@ -21,14 +21,16 @@ import java.io.File
 
 fun TreeNode.traverseToNext(codec: ObjectCodec): JsonParser = traverse(codec).apply { nextToken() }
 
-fun Class<*>.unwrapThrowable(): Class<*> =
-        if (Throwable::class.java.isAssignableFrom(this)) {
-            Throwable::class.java
-        } else this
+fun Class<*>.unwrap(): Class<*> =
+        when {
+            Throwable::class.java.isAssignableFrom(this) -> Throwable::class.java
+            Map::class.java.isAssignableFrom(this) -> Map::class.java
+            else -> this
+        }
 
 val Any?.jsonClassName: String?
     get() = if (this != null)
-        this::class.java.unwrapThrowable().canonicalName
+        this::class.java.unwrap().canonicalName
     else
         Object::class.java.canonicalName
 
