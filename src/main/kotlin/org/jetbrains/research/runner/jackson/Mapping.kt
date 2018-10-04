@@ -142,16 +142,29 @@ object MapDeserializer : StdDeserializer<Map<*, *>>(Map::class.java) {
 
         val res = mutableMapOf<Any?, Any?>()
 
-        val entryArray: ArrayNode = p.codec.readTree(p)
+        val tree: TreeNode = p.codec.readTree(p)
 
-        for (entry in entryArray) {
-            val obj = entry as ObjectNode
-            val key = unknownDeserializer.deserialize(
-                    obj["key"].traverseToNext(p.codec), ctxt)
-            val value = unknownDeserializer.deserialize(
-                    obj["value"].traverseToNext(p.codec), ctxt)
+        when (tree) {
+            is ArrayNode -> {
+                for (entry in tree) {
+                    val obj = entry as ObjectNode
+                    val key = unknownDeserializer.deserialize(
+                            obj["key"].traverseToNext(p.codec), ctxt)
+                    val value = unknownDeserializer.deserialize(
+                            obj["value"].traverseToNext(p.codec), ctxt)
 
-            res[key] = value
+                    res[key] = value
+                }
+            }
+            is ObjectNode -> {
+                for (entry in tree.fields()) {
+                    val key = entry.key
+                    val value = unknownDeserializer.deserialize(
+                            entry.value.traverseToNext(p.codec), ctxt)
+
+                    res[key] = value
+                }
+            }
         }
 
         return res
