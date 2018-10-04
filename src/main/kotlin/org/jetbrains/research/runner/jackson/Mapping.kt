@@ -25,6 +25,7 @@ private fun Class<*>.unwrap(): Class<*> =
         when {
             Throwable::class.java.isAssignableFrom(this) -> Throwable::class.java
             Map::class.java.isAssignableFrom(this) -> Map::class.java
+            Collection::class.java.isAssignableFrom(this) -> Collection::class.java
             else -> this
         }
 
