@@ -6,6 +6,7 @@ import org.jetbrains.research.runner.data.*
 import org.jetbrains.research.runner.jackson.makeMapper
 import org.jetbrains.research.runner.util.ConsoleReportListener
 import org.jetbrains.research.runner.util.CustomContextClassLoaderExecutor
+import org.jetbrains.research.runner.util.NoExitSecurityManager
 import org.jetbrains.research.runner.util.TestReportListener
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage
 import org.junit.platform.launcher.EngineFilter.includeEngines
@@ -14,6 +15,7 @@ import org.junit.platform.launcher.core.LauncherFactory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import ru.spbstu.kotlin.generate.combinators.Arbitrary
+import java.io.Closeable
 import java.io.File
 import java.net.URL
 import java.net.URLClassLoader
@@ -75,10 +77,12 @@ data class RunnerArgs(
 
 val logger: Logger = LoggerFactory.getLogger("Main")
 
-fun main(arguments: Array<String>) = KFirstRunner().run(ParserArgs(ArgParser(arguments)))
+fun main(arguments: Array<String>) {
+    KFirstRunner().run(ParserArgs(ArgParser(arguments)))
+}
 
 class KFirstRunner {
-    fun run(args: Args) {
+    fun run(args: Args): TestData {
 
         val classpathRoots =
             args.classpathPrefix
@@ -98,76 +102,94 @@ class KFirstRunner {
         logger.info("Classpath roots: ${classpathRoots.joinToString()}")
         logger.info("Test packages: ${packages.joinToString()}")
 
-        CustomContextClassLoaderExecutor(
-            URLClassLoader(
-                classpathRoots.toTypedArray(),
-                Thread.currentThread().contextClassLoader
-            )
-        ).invoke {
+        val securityManagerWrapper = object : Closeable {
+            val oldSecurityManager = System.getSecurityManager()
 
-            val request = LauncherDiscoveryRequestBuilder
-                .request()
-                .filters(
-                    includeEngines("junit-jupiter")
+            init {
+                System.setSecurityManager(
+                    NoExitSecurityManager(oldSecurityManager)
                 )
-                .selectors(
-                    packages.map { selectPackage(it) }
+            }
+
+            override fun close() {
+                System.setSecurityManager(oldSecurityManager)
+            }
+        }
+
+        securityManagerWrapper.use {
+            CustomContextClassLoaderExecutor(
+                URLClassLoader(
+                    classpathRoots.toTypedArray(),
+                    Thread.currentThread().contextClassLoader
                 )
-                .configurationParameter(
-                    "junit.jupiter.execution.timeout.default",
-                    "${args.timeout} s"
-                )
-                .build()
+            ).invoke {
 
-            val testReport = TestReportListener()
-            val consoleReport = ConsoleReportListener()
+                val request = LauncherDiscoveryRequestBuilder
+                    .request()
+                    .filters(
+                        includeEngines("junit-jupiter")
+                    )
+                    .selectors(
+                        packages.map { selectPackage(it) }
+                    )
+                    .configurationParameter(
+                        "junit.jupiter.execution.timeout.default",
+                        "${args.timeout} s"
+                    )
+                    .build()
 
-            val seed = (System.getenv("RANDOM_SEED")?.toLong() ?: Arbitrary.defaultForLong(listOf()).next())
-                .apply { Arbitrary.random.setSeed(this) }
+                val testReport = TestReportListener()
+                val consoleReport = ConsoleReportListener()
 
-            val testPlan = LauncherFactory
-                .create()
-                .discover(request)
+                val seed = (System.getenv("RANDOM_SEED")?.toLong() ?: Arbitrary.defaultForLong(listOf()).next())
+                    .apply { Arbitrary.random.setSeed(this) }
 
-            LauncherFactory
-                .create()
-                .apply {
-                    registerTestExecutionListeners(testReport)
-                    registerTestExecutionListeners(consoleReport)
+                val testPlan = LauncherFactory
+                    .create()
+                    .discover(request)
+
+                LauncherFactory
+                    .create()
+                    .apply {
+                        registerTestExecutionListeners(testReport)
+                        registerTestExecutionListeners(consoleReport)
+                    }
+                    .execute(testPlan)
+
+                with(testReport) {
+
+                    logger.info("Result: $testData")
+
+                    val mapper = makeMapper()
+
+                    var totalTestData = TestData()
+
+                    for ((pkg, pkgTests) in testData.groupByClassName().filterKeys { "" != it }) {
+
+                        val methodTests = pkgTests.groupByMethodName()
+
+                        val testData = methodTests.map { (method, tests) ->
+                            TestDatum(
+                                pkg,
+                                method,
+                                tests.flatMap { (id, _) -> id.tags }
+                                    .map { tag -> tag.name }
+                                    .toSet(),
+                                tests.map { (_, r) -> r.toTestResult() }
+                            )
+                        }.let(::TestData)
+
+                        totalTestData += testData
+
+                    }
+
+                    File(args.resultFile).writer().use {
+                        mapper.writerWithDefaultPrettyPrinter().writeValue(it, totalTestData)
+                    }
+
+                    return totalTestData
+
                 }
-                .execute(testPlan)
-
-            with(testReport) {
-
-                logger.info("Result: $testData")
-
-                val mapper = makeMapper()
-
-                var totalTestData = TestData()
-
-                for ((pkg, pkgTests) in testData.groupByClassName().filterKeys { "" != it }) {
-
-                    val methodTests = pkgTests.groupByMethodName()
-
-                    val testData = methodTests.map { (method, tests) ->
-                        TestDatum(
-                            pkg,
-                            method,
-                            tests.flatMap { (id, _) -> id.tags }
-                                .map { tag -> tag.name }
-                                .toSet(),
-                            tests.map { (_, r) -> r.toTestResult() }
-                        )
-                    }.let(::TestData)
-
-                    totalTestData += testData
-
-                }
-
-                File(args.resultFile).writer().use {
-                    mapper.writerWithDefaultPrettyPrinter().writeValue(it, totalTestData)
-                }
-
             }
         }
     }

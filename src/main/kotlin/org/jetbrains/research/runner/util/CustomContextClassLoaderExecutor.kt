@@ -2,13 +2,15 @@ package org.jetbrains.research.runner.util
 
 class CustomContextClassLoaderExecutor(val customClassLoader: ClassLoader) {
 
-    operator fun <T> invoke(callable: () -> T): T {
+    inline operator fun <T> invoke(callable: () -> T): T {
         return replaceThreadContextClassLoaderAndInvoke(customClassLoader, callable)
     }
 
-    private fun <T> replaceThreadContextClassLoaderAndInvoke(
-            customClassLoader: ClassLoader,
-            callable: () -> T): T {
+    @PublishedApi
+    internal inline fun <T> replaceThreadContextClassLoaderAndInvoke(
+        customClassLoader: ClassLoader,
+        callable: () -> T
+    ): T {
         val originalClassLoader = Thread.currentThread().contextClassLoader
         try {
             Thread.currentThread().contextClassLoader = customClassLoader
