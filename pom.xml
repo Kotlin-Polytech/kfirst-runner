@@ -6,7 +6,15 @@
 
     <groupId>org.jetbrains.research</groupId>
     <artifactId>kfirst-runner</artifactId>
-    <version>0.1.18.2</version>
+    <version>19.0.1</version>
+
+    <name>kfirst-runner</name>
+
+    <parent>
+        <groupId>ru.spbstu</groupId>
+        <artifactId>kfirst-bom</artifactId>
+        <version>19.0.1</version>
+    </parent>
 
     <distributionManagement>
         <repository>
@@ -20,11 +28,6 @@
 
     <repositories>
         <repository>
-            <id>bintray-vorpal-research-kotlin-maven</id>
-            <name>vorpal-research-kotlin-maven</name>
-            <url>http://dl.bintray.com/vorpal-research/kotlin-maven</url>
-        </repository>
-        <repository>
             <id>bintray-xenomachina-maven</id>
             <name>bintray</name>
             <url>http://dl.bintray.com/xenomachina/maven</url>
@@ -32,51 +35,24 @@
     </repositories>
 
     <properties>
-        <project.build.sourceEncoding>
-            UTF-8
-        </project.build.sourceEncoding>
-        <project.reporting.outputEncoding>
-            UTF-8
-        </project.reporting.outputEncoding>
-
-        <kotlin.version>1.2.51</kotlin.version>
-        <junit.jupiter.version>5.0.0</junit.jupiter.version>
-        <junit.vintage.version>4.12.0</junit.vintage.version>
-        <junit.platform.version>1.0.0</junit.platform.version>
-        <kotlin.argparser>2.0.3</kotlin.argparser>
-        <slf4j.version>1.7.25</slf4j.version>
-        <logback.version>1.0.13</logback.version>
-        <jackson.version>2.9.0</jackson.version>
-        <guava.version>26.0-jre</guava.version>
+        <kotlin.argparser>2.0.7</kotlin.argparser>
+        <slf4j.version>1.7.26</slf4j.version>
+        <logback.version>1.2.3</logback.version>
+        <jackson.version>2.9.9</jackson.version>
+        <guava.version>28.0-jre</guava.version>
         <aether.version>1.1.0</aether.version>
-        <wagon.version>3.0.0</wagon.version>
-        <maven-model-builder.version>3.5.3</maven-model-builder.version>
+        <wagon.version>3.3.3</wagon.version>
+        <maven-model-builder.version>3.6.1</maven-model-builder.version>
         <maven-aether-provider.version>3.3.9</maven-aether-provider.version>
-        <kcheck.version>0.0.0.2</kcheck.version>
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib</artifactId>
-            <version>${kotlin.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-reflect</artifactId>
-            <version>${kotlin.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-runtime</artifactId>
-            <version>${kotlin.version}</version>
-        </dependency>
-
         <dependency>
             <groupId>com.xenomachina</groupId>
             <artifactId>kotlin-argparser</artifactId>
             <version>${kotlin.argparser}</version>
         </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -87,6 +63,7 @@
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
         </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
@@ -104,16 +81,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-console</artifactId>
-            <version>${junit.platform.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-launcher</artifactId>
-            <version>${junit.platform.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>${junit.jupiter.version}</version>
@@ -122,6 +89,16 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>${junit.jupiter.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-console</artifactId>
+            <version>${junit.platform.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <version>${junit.platform.version}</version>
         </dependency>
 
         <dependency>
@@ -180,13 +157,6 @@
             <artifactId>wagon-ssh</artifactId>
             <version>${wagon.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>ru.spbstu</groupId>
-            <artifactId>kcheck</artifactId>
-            <version>${kcheck.version}</version>
-        </dependency>
-
     </dependencies>
 
     <build>
@@ -200,41 +170,8 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>kotlin-maven-plugin</artifactId>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <version>${kotlin.version}</version>
-                <configuration>
-                    <jvmTarget>1.8</jvmTarget>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <phase>process-sources</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>test-compile</id>
-                        <phase>process-test-sources</phase>
-                        <goals>
-                            <goal>test-compile</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.6</version>
+                <version>3.1.1</version>
                 <configuration>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>

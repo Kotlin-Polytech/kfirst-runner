@@ -4,31 +4,28 @@ import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 import org.jetbrains.research.runner.data.*
 import org.jetbrains.research.runner.jackson.makeMapper
-import org.jetbrains.research.runner.junit.SingleTestExecutorWithTimeout
 import org.jetbrains.research.runner.util.ConsoleReportListener
 import org.jetbrains.research.runner.util.CustomContextClassLoaderExecutor
 import org.jetbrains.research.runner.util.TestReportListener
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage
+import org.junit.platform.launcher.EngineFilter.includeEngines
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder
 import org.junit.platform.launcher.core.LauncherFactory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import ru.spbstu.kotlin.generate.context.Gens
+import ru.spbstu.kotlin.generate.combinators.Arbitrary
 import java.io.File
-import java.lang.reflect.Field
-import java.lang.reflect.Modifier
 import java.net.URL
 import java.net.URLClassLoader
-import java.util.concurrent.TimeUnit
 
 val TAGS = listOf(
-        "Example",
-        "Trivial",
-        "Easy",
-        "Normal",
-        "Hard",
-        "Impossible",
-        "No tag"
+    "Example",
+    "Trivial",
+    "Easy",
+    "Normal",
+    "Hard",
+    "Impossible",
+    "No tag"
 )
 
 interface Args {
@@ -45,32 +42,36 @@ class ParserArgs(parser: ArgParser) : Args {
 
     override val projectDir by parser.storing("-d", help = "project dir")
 
-    override val classpathPrefix by parser.adding("-c", "--classpath-prefix", help = "classpath prefix",
-            initialValue = mutableListOf("/target/classes/", "/target/test-classes/")) { this }
+    override val classpathPrefix by parser.adding(
+        "-c", "--classpath-prefix",
+        help = "classpath prefix",
+        initialValue = mutableListOf("/target/classes/", "/target/test-classes/")
+    ) { this }
 
     override val packages by parser.adding("-p", help = "test packages")
 
     override val authorFile by parser.storing("-a", help = "author file")
-            .default("author.name")
+        .default("author.name")
 
     override val ownerFile by parser.storing("-o", help = "owner file")
-            .default("owner.name")
+        .default("owner.name")
 
     override val resultFile by parser.storing("-r", help = "result file")
-            .default("results.json")
+        .default("results.json")
 
     override val timeout by parser.storing("-t", help = "timeout") { toLong() }
-            .default(50L)
+        .default(50L)
 }
 
 data class RunnerArgs(
-        override val projectDir: String,
-        override val classpathPrefix: List<String> = mutableListOf("/target/classes/", "/target/test-classes/"),
-        override val packages: List<String>,
-        override val authorFile: String = "author.name",
-        override val ownerFile: String = "owner.name",
-        override val resultFile: String = "results.json",
-        override val timeout: Long = 50L) : Args
+    override val projectDir: String,
+    override val classpathPrefix: List<String> = mutableListOf("/target/classes/", "/target/test-classes/"),
+    override val packages: List<String>,
+    override val authorFile: String = "author.name",
+    override val ownerFile: String = "owner.name",
+    override val resultFile: String = "results.json",
+    override val timeout: Long = 50L
+) : Args
 
 val logger: Logger = LoggerFactory.getLogger("Main")
 
@@ -80,9 +81,9 @@ class KFirstRunner {
     fun run(args: Args) {
 
         val classpathRoots =
-                args.classpathPrefix
-                        .map { "${args.projectDir}$it" }
-                        .map { URL(it) }
+            args.classpathPrefix
+                .map { "${args.projectDir}$it" }
+                .map { URL(it) }
         val packages = args.packages
 
         // TODO: Support for nested packages
@@ -98,56 +99,47 @@ class KFirstRunner {
         logger.info("Test packages: ${packages.joinToString()}")
 
         CustomContextClassLoaderExecutor(
-                URLClassLoader(
-                        classpathRoots.toTypedArray(),
-                        Thread.currentThread().contextClassLoader
-                )
+            URLClassLoader(
+                classpathRoots.toTypedArray(),
+                Thread.currentThread().contextClassLoader
+            )
         ).invoke {
 
-            val executor = SingleTestExecutorWithTimeout(args.timeout, TimeUnit.SECONDS)
-
-            val executorField =
-                    Class.forName(
-                            "org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor")
-                            .getDeclaredField("singleTestExecutor")
-
-            val modifiers = Field::class.java
-                    .getDeclaredField("modifiers")
-            modifiers.isAccessible = true
-            modifiers.setInt(executorField, executorField.modifiers and Modifier.FINAL.inv())
-
-            executorField.isAccessible = true
-            executorField.set(null, executor)
-            executorField.isAccessible = false
-
-            modifiers.setInt(executorField, executorField.modifiers or Modifier.FINAL)
-            modifiers.isAccessible = false
-
             val request = LauncherDiscoveryRequestBuilder
-                    .request()
-                    .selectors(
-                            packages.map { selectPackage(it) }
-                    )
-                    .build()
+                .request()
+                .filters(
+                    includeEngines("junit-jupiter")
+                )
+                .selectors(
+                    packages.map { selectPackage(it) }
+                )
+                .configurationParameter(
+                    "junit.jupiter.execution.timeout.default",
+                    "${args.timeout} s"
+                )
+                .build()
 
             val testReport = TestReportListener()
             val consoleReport = ConsoleReportListener()
 
-            val seed = (System.getenv("RANDOM_SEED")?.toLong() ?: Gens.random.nextLong())
-                    .apply { Gens.random.setSeed(this) }
+            val seed = (System.getenv("RANDOM_SEED")?.toLong() ?: Arbitrary.defaultForLong(listOf()).next())
+                .apply { Arbitrary.random.setSeed(this) }
+
+            val testPlan = LauncherFactory
+                .create()
+                .discover(request)
 
             LauncherFactory
-                    .create()
-                    .apply {
-                        registerTestExecutionListeners(testReport)
-                        registerTestExecutionListeners(consoleReport)
-                        registerTestExecutionListeners(executor.fubarListener)
-                    }
-                    .execute(request)
+                .create()
+                .apply {
+                    registerTestExecutionListeners(testReport)
+                    registerTestExecutionListeners(consoleReport)
+                }
+                .execute(testPlan)
 
             with(testReport) {
 
-                logger.info("$testData")
+                logger.info("Result: $testData")
 
                 val mapper = makeMapper()
 
@@ -159,12 +151,12 @@ class KFirstRunner {
 
                     val testData = methodTests.map { (method, tests) ->
                         TestDatum(
-                                pkg,
-                                method,
-                                tests.flatMap { (id, _) -> id.tags }
-                                        .map { tag -> tag.name }
-                                        .toSet(),
-                                tests.map { (_, r) -> r.toTestResult() }
+                            pkg,
+                            method,
+                            tests.flatMap { (id, _) -> id.tags }
+                                .map { tag -> tag.name }
+                                .toSet(),
+                            tests.map { (_, r) -> r.toTestResult() }
                         )
                     }.let(::TestData)
 

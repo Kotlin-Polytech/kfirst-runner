@@ -3,12 +3,12 @@ package org.jetbrains.research.runner
 import org.jetbrains.research.runner.data.TestInput
 import org.jetbrains.research.runner.jackson.makeMapper
 import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class ObjectMapperTest {
 
     @Test
-    fun `test that mapper works as intended`() {
+    fun `mapper works as intended`() {
         val mapper = makeMapper()
 
         assertEquals(/* language=JSON */"""[{"key":"a","value":"b"},{"key":"Hello","value":[{"key":1,"value":2}]}]""",
