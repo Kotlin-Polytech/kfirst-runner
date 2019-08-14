@@ -6,6 +6,7 @@ import common.TestFailureException
 import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.engine.support.descriptor.MethodSource
 import org.junit.platform.launcher.TestIdentifier
+import ru.spbstu.kotlin.generate.combinators.ForInputException
 
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.CLASS,
@@ -39,7 +40,7 @@ data class TestResult(
 
 fun TestExecutionResult.toTestResult(): TestResult {
     val status = status.toOurStatus()
-    val ex: Throwable? = throwable.orElse(null)
+    val ex: Throwable? = throwable.map { if (it is ForInputException) it.nested else it }.orElse(null)
     return when (ex) {
         is TestFailureException ->
             TestResult(
