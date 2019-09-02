@@ -28,6 +28,11 @@
 
     <repositories>
         <repository>
+            <id>bintray-vorpal-research-kotlin-maven</id>
+            <name>vorpal-research-kotlin-maven</name>
+            <url>http://dl.bintray.com/vorpal-research/kotlin-maven</url>
+        </repository>
+        <repository>
             <id>bintray-xenomachina-maven</id>
             <name>bintray</name>
             <url>http://dl.bintray.com/xenomachina/maven</url>
