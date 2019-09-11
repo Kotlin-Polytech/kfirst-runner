@@ -24,4 +24,8 @@ class TimeoutTest {
     fun timeoutTest03() {
         while (true) Thread.sleep(100)
     }
+
+    @Test
+    @EnabledIfSystemProperty(named = runFakeTestsPropName, matches = "true")
+    fun pass() {}
 }

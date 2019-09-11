@@ -26,13 +26,16 @@ class KFirstRunnerTest {
             )
         )
 
-        assertEquals(1, testData.size)
-        assertEquals(1, testData.failed.size)
-        assertEquals(1, testData.failed.data[0].results.size)
-        assertEquals(
-            UnknownFailureDatum("java.util.concurrent.TimeoutException : timeoutTest() timed out after 1 second"),
-            testData.failed.data[0].results[0].failure
-        )
+        assertEquals(4, testData.size)
+        assertEquals(3, testData.failed.size)
+
+        for (fail in testData.failed) {
+            assertEquals(1, fail.results.size)
+            assertEquals(
+                UnknownFailureDatum("org.jetbrains.research.runner.junit.TestTimeoutException : Execution timed out after: 1 SECONDS"),
+                fail.results[0].failure
+            )
+        }
     }
 
     @Test
@@ -44,7 +47,7 @@ class KFirstRunnerTest {
             )
         )
 
-        assertEquals(1, testData.size)
+        assertEquals(2, testData.size)
         assertEquals(1, testData.failed.size)
         assertEquals(1, testData.failed.data[0].results.size)
         assertEquals(

@@ -11,4 +11,8 @@ class ExitTest {
     fun exitTest() {
         exitProcess(42)
     }
+
+    @Test
+    @EnabledIfSystemProperty(named = runFakeTestsPropName, matches = "true")
+    fun pass() {}
 }
