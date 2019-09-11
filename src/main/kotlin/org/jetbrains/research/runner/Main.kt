@@ -127,14 +127,14 @@ class KFirstRunner {
                 val request = LauncherDiscoveryRequestBuilder
                     .request()
                     .filters(
-                        includeEngines("junit-jupiter")
+                        includeEngines("my-junit-jupiter")
                     )
                     .selectors(
                         packages.map { selectPackage(it) }
                     )
                     .configurationParameter(
-                        "junit.jupiter.execution.timeout.default",
-                        "${args.timeout} s"
+                        "my.junit.jupiter.timeout",
+                        "${args.timeout}"
                     )
                     .build()
 

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty
 import kotlin.system.exitProcess
 
-class TimeoutTest {
+class ExitTest {
     @Test
     @EnabledIfSystemProperty(named = runFakeTestsPropName, matches = "true")
     fun exitTest() {

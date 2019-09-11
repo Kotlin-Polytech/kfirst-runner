@@ -9,22 +9,23 @@ import org.junit.platform.launcher.TestIdentifier
 import ru.spbstu.kotlin.generate.combinators.ForInputException
 
 @JsonTypeInfo(
-        use = JsonTypeInfo.Id.CLASS,
-        include = JsonTypeInfo.As.PROPERTY,
-        property = "@class")
+    use = JsonTypeInfo.Id.CLASS,
+    include = JsonTypeInfo.As.PROPERTY,
+    property = "@class"
+)
 sealed class FailureDatum
 
 data class TestInput(val data: Map<String, Any?>)
 
 data class TestFailureDatum(
-        val input: TestInput,
-        val output: Any?,
-        val expectedOutput: Any?,
-        val nestedException: String
+    val input: TestInput,
+    val output: Any?,
+    val expectedOutput: Any?,
+    val nestedException: String
 ) : FailureDatum()
 
 data class UnknownFailureDatum(
-        val nestedException: String
+    val nestedException: String
 ) : FailureDatum()
 
 enum class TestResultStatus {
@@ -34,8 +35,8 @@ enum class TestResultStatus {
 fun TestExecutionResult.Status.toOurStatus(): TestResultStatus = enumValueOf(toString())
 
 data class TestResult(
-        val status: TestResultStatus,
-        val failure: FailureDatum? = null
+    val status: TestResultStatus,
+    val failure: FailureDatum? = null
 )
 
 fun TestExecutionResult.toTestResult(): TestResult {
@@ -44,13 +45,13 @@ fun TestExecutionResult.toTestResult(): TestResult {
     return when (ex) {
         is TestFailureException ->
             TestResult(
-                    status,
-                    TestFailureDatum(
-                            TestInput(ex.input),
-                            ex.output,
-                            ex.expectedOutput,
-                            "${ex.inner}".take(8096)
-                    )
+                status,
+                TestFailureDatum(
+                    TestInput(ex.input),
+                    ex.output,
+                    ex.expectedOutput,
+                    "${ex.inner}".take(8096)
+                )
             )
         is NotImplementedError ->
             TestResult(TestResultStatus.NOT_IMPLEMENTED)
@@ -58,23 +59,30 @@ fun TestExecutionResult.toTestResult(): TestResult {
             TestResult(status)
         else ->
             TestResult(
-                    status,
-                    UnknownFailureDatum(
-                            "${ex.javaClass.name} : ${ex.message}".take(8096)
-                    )
+                status,
+                UnknownFailureDatum(
+                    "${ex.javaClass.name} : ${ex.message}".take(8096)
+                )
             )
     }
 }
 
 @JsonIgnoreProperties("success", "failure")
 data class TestDatum(
-        val packageName: String,
-        val methodName: String,
-        val tags: Set<String>,
-        val results: List<TestResult>
+    val packageName: String,
+    val methodName: String,
+    val tags: Set<String>,
+    val results: List<TestResult>
 ) {
     val isSuccess by lazy { results.isNotEmpty() && results.all { TestResultStatus.SUCCESSFUL == it.status } }
-    val isFailure by lazy { results.isNotEmpty() && results.any { it.status in setOf(TestResultStatus.FAILED, TestResultStatus.ABORTED) } }
+    val isFailure by lazy {
+        results.isNotEmpty() && results.any {
+            it.status in setOf(
+                TestResultStatus.FAILED,
+                TestResultStatus.ABORTED
+            )
+        }
+    }
 }
 
 @JsonIgnoreProperties("size", "succeeded", "failed", "notTagged")
@@ -88,8 +96,8 @@ data class TestData(val data: List<TestDatum>) : Iterable<TestDatum> by data {
     val failed by lazy { data.filter { it.isFailure }.let(::TestData) }
 
     fun tagged(tag: String) =
-            if ("No tag" == tag) notTagged
-            else data.filter { tag in it.tags }.let(::TestData)
+        if ("No tag" == tag) notTagged
+        else data.filter { tag in it.tags }.let(::TestData)
 
     val notTagged by lazy { data.filter { it.tags.isEmpty() }.let(::TestData) }
 
@@ -101,25 +109,25 @@ typealias TestDataMap = MutableMap<TestIdentifier, TestExecutionResult>
 typealias TestDataList = List<Map.Entry<TestIdentifier, TestExecutionResult>>
 
 fun TestDataMap.groupByClassName() = entries
-        .groupBy { (id, _) ->
-            id.source.map { s ->
-                when (s) {
-                    is MethodSource -> {
-                        s.className
-                    }
-                    else -> ""
+    .groupBy { (id, _) ->
+        id.source.map { s ->
+            when (s) {
+                is MethodSource -> {
+                    s.className
                 }
-            }.orElse("")
-        }
+                else -> ""
+            }
+        }.orElse("")
+    }
 
 fun TestDataList.groupByMethodName() =
-        groupBy { (id, _) ->
-            id.source.map { s ->
-                when (s) {
-                    is MethodSource -> {
-                        s.methodName
-                    }
-                    else -> ""
+    groupBy { (id, _) ->
+        id.source.map { s ->
+            when (s) {
+                is MethodSource -> {
+                    s.methodName
                 }
-            }.orElse("")
-        }
+                else -> ""
+            }
+        }.orElse("")
+    }
