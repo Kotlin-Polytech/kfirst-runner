@@ -1,6 +1,7 @@
 package org.jetbrains.research.runner
 
 import org.jetbrains.research.runner.data.UnknownFailureDatum
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -13,6 +14,12 @@ class KFirstRunnerTest {
         @BeforeAll
         fun setup() {
             System.setProperty(runFakeTestsPropName, "true")
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun teardown() {
+            System.setProperty(runFakeTestsPropName, "false")
         }
     }
 
