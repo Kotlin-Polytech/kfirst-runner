@@ -63,4 +63,22 @@ class KFirstRunnerTest {
         )
     }
 
+    @Test
+    fun `nested ForInputs are unwrapped`() {
+        val testData = KFirstRunner().run(
+            RunnerArgs(
+                projectDir = Paths.get("").toUri().toString().dropLast(1),
+                packages = listOf("org.jetbrains.research.runner.fake.kcheck")
+            )
+        )
+
+        assertEquals(2, testData.size)
+        assertEquals(1, testData.failed.size)
+        assertEquals(1, testData.failed.data[0].results.size)
+        assertEquals(
+            UnknownFailureDatum("java.lang.ArithmeticException : / by zero"),
+            testData.failed.data[0].results[0].failure
+        )
+    }
+
 }

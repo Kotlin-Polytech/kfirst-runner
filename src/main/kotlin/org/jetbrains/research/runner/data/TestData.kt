@@ -41,7 +41,11 @@ data class TestResult(
 
 fun TestExecutionResult.toTestResult(): TestResult {
     val status = status.toOurStatus()
-    val ex: Throwable? = throwable.map { if (it is ForInputException) it.nested else it }.orElse(null)
+    val ex: Throwable? = throwable.map {
+        var res = it
+        while (res is ForInputException) res = res.nested
+        res
+    }.orElse(null)
     return when (ex) {
         is TestFailureException ->
             TestResult(
