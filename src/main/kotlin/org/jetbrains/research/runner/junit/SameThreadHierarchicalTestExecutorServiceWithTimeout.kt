@@ -70,12 +70,7 @@ class SameThreadHierarchicalTestExecutorServiceWithTimeout(
                 "org.junit.platform.engine.support.hierarchical.NodeTestTask"
             ).getDeclaredField("testDescriptor")
 
-        private val modifiers = Field::class.java
-            .getDeclaredField("modifiers")
-
         init {
-            modifiers.isAccessible = true
-            modifiers.setInt(testDescriptorField, testDescriptorField.modifiers and Modifier.FINAL.inv())
             testDescriptorField.isAccessible = true
         }
     }

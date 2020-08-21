@@ -6,14 +6,14 @@
 
     <groupId>org.jetbrains.research</groupId>
     <artifactId>kfirst-runner</artifactId>
-    <version>19.0.6</version>
+    <version>20.0.0</version>
 
     <name>kfirst-runner</name>
 
     <parent>
         <groupId>ru.spbstu</groupId>
         <artifactId>kfirst-bom</artifactId>
-        <version>19.0.3</version>
+        <version>20.0.0</version>
     </parent>
 
     <distributionManagement>
