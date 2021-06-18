@@ -4,14 +4,12 @@ import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 import org.jetbrains.research.runner.data.*
 import org.jetbrains.research.runner.jackson.makeMapper
-import org.jetbrains.research.runner.util.ConsoleReportListener
-import org.jetbrains.research.runner.util.CustomContextClassLoaderExecutor
-import org.jetbrains.research.runner.util.NoExitSecurityManager
-import org.jetbrains.research.runner.util.TestReportListener
+import org.jetbrains.research.runner.util.*
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage
 import org.junit.platform.launcher.EngineFilter.includeEngines
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder
 import org.junit.platform.launcher.core.LauncherFactory
+import org.junit.runner.JUnitCore
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import ru.spbstu.kotlin.generate.combinators.Arbitrary
@@ -156,9 +154,17 @@ class KFirstRunner {
                     }
                     .execute(testPlan)
 
+                val zestListener = ZestTestRunListener()
+                val zestClasses = loadZestClasses(packages)
+
+                //Execute ZestTests
+                JUnitCore().apply { addListener(zestListener) }.run(*zestClasses)
+                val zestTestsData = zestListener.testDatum.map { it.value }.let(::TestData)
+
                 with(testReport) {
 
                     logger.info("Result: $testData")
+                    logger.info("Zest result: $zestTestsData")
 
                     val mapper = makeMapper()
 
@@ -182,6 +188,8 @@ class KFirstRunner {
                         totalTestData += testData
 
                     }
+
+                    totalTestData += zestTestsData
 
                     File(args.resultFile).writer().use {
                         mapper.writerWithDefaultPrettyPrinter().writeValue(it, totalTestData)
