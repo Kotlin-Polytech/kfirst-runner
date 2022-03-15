@@ -5,8 +5,6 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.google.common.util.concurrent.UncheckedTimeoutException
 import org.jetbrains.research.runner.junit.TestTimeoutException
 import org.junit.platform.engine.TestDescriptor
-import java.lang.reflect.Field
-import java.lang.reflect.Modifier
 import java.util.concurrent.*
 
 class SameThreadHierarchicalTestExecutorServiceWithTimeout(
