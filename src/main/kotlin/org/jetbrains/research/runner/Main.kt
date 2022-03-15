@@ -38,6 +38,7 @@ interface Args {
     val ownerFile: String
     val resultFile: String
     val timeout: Long
+    val useBlacklistedExceptions: Boolean
 }
 
 class ParserArgs(parser: ArgParser) : Args {
@@ -63,6 +64,9 @@ class ParserArgs(parser: ArgParser) : Args {
 
     override val timeout by parser.storing("-t", help = "timeout") { toLong() }
         .default(50L)
+
+    override val useBlacklistedExceptions by parser.storing("-x", help = "use blacklisted exceptions") { toBoolean() }
+        .default(false)
 }
 
 data class RunnerArgs(
@@ -72,7 +76,8 @@ data class RunnerArgs(
     override val authorFile: String = "author.name",
     override val ownerFile: String = "owner.name",
     override val resultFile: String = "results.json",
-    override val timeout: Long = 50L
+    override val timeout: Long = 50L,
+    override val useBlacklistedExceptions: Boolean = false
 ) : Args
 
 val logger: Logger = LoggerFactory.getLogger("Main")
@@ -135,6 +140,10 @@ class KFirstRunner {
                     .configurationParameter(
                         "my.junit.jupiter.timeout",
                         "${args.timeout}"
+                    )
+                    .configurationParameter(
+                        "my.junit.jupiter.useBlacklistedExceptions",
+                        "${args.useBlacklistedExceptions}"
                     )
                     .build()
 

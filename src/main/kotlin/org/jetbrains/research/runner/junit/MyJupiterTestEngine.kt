@@ -6,15 +6,11 @@ import org.junit.jupiter.engine.config.JupiterConfiguration
 import org.junit.jupiter.engine.descriptor.JupiterEngineDescriptor
 import org.junit.jupiter.engine.discovery.DiscoverySelectorResolver
 import org.junit.jupiter.engine.execution.JupiterEngineExecutionContext
-import org.junit.jupiter.engine.support.JupiterThrowableCollectorFactory
 import org.junit.platform.engine.EngineDiscoveryRequest
 import org.junit.platform.engine.ExecutionRequest
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.UniqueId
-import org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine
-import org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutorService
-import org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorServiceWithTimeout
-import org.junit.platform.engine.support.hierarchical.ThrowableCollector
+import org.junit.platform.engine.support.hierarchical.*
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -57,7 +53,14 @@ class MyJupiterTestEngine : HierarchicalTestEngine<JupiterEngineExecutionContext
     }
 
     override fun createThrowableCollectorFactory(request: ExecutionRequest): ThrowableCollector.Factory {
-        return ThrowableCollector.Factory { JupiterThrowableCollectorFactory.createThrowableCollector() }
+        val configuration = getJupiterConfiguration(request)
+        val useBlacklistedExceptions = configuration
+            .getRawConfigurationParameter("my.junit.jupiter.useBlacklistedExceptions")
+            .map { it.toBoolean() }
+            .orElse(false)
+        return if (useBlacklistedExceptions)
+            ThrowableCollector.Factory { OpenTest4JAwareThrowableCollector() } else
+            ThrowableCollector.Factory { OpenTest4JAndJUnit4AwareThrowableCollectorWithNoBlacklistedExceptions() }
     }
 
     private fun getJupiterConfiguration(request: ExecutionRequest): JupiterConfiguration {

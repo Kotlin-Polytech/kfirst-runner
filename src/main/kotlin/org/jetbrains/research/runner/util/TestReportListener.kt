@@ -19,8 +19,10 @@ class TestReportListener : TestExecutionListener {
 
             fun handleTTE(tte: TestTimeoutException) {
                 val td = tte.testDescriptor
-                testData.merge(TestIdentifier.from(td), TestExecutionResult.aborted(tte)) { old, new ->
-                    if (old.throwable.filter { it is TestTimeoutException }.isPresent) old else new
+                synchronized(testData) {
+                    testData.merge(TestIdentifier.from(td), TestExecutionResult.aborted(tte)) { old, new ->
+                        if (old.throwable.filter { it is TestTimeoutException }.isPresent) old else new
+                    }
                 }
             }
 
@@ -30,8 +32,10 @@ class TestReportListener : TestExecutionListener {
             }
 
         } else {
-            testData.merge(testIdentifier, testExecutionResult) { old, new ->
-                if (old.throwable.filter { it is TestTimeoutException }.isPresent) old else new
+            synchronized(testData) {
+                testData.merge(testIdentifier, testExecutionResult) { old, new ->
+                    if (old.throwable.filter { it is TestTimeoutException }.isPresent) old else new
+                }
             }
         }
     }
